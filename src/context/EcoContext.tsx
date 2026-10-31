@@ -47,6 +47,16 @@ interface EcoContextType {
   treesEquivalent: number;
   carMilesAvoided: number;
   smartphoneChargesSaved: number;
+  weeklyEcoPoints: number;
+  totalActionsCount: number;
+  levelInfo: {
+    currentLevel: string;
+    levelNumber: number;
+    currentMin: number;
+    nextMax: number;
+    progressPercent: number;
+    encouragingMessage: string;
+  };
 
   // Actions
   logAction: (actionId: string, quantity: number, note?: string) => void;
@@ -274,6 +284,73 @@ export const EcoProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     // ~0.008 kg CO2 per full smartphone charge
     return Math.round(totalCo2SavedKg / 0.008);
   }, [totalCo2SavedKg]);
+
+  const weeklyEcoPoints = useMemo(() => {
+    const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+    let sum = 0;
+    for (const log of loggedActions) {
+      const time = new Date(log.timestamp).getTime();
+      if (!isNaN(time) && time >= sevenDaysAgo) {
+        sum += log.pointsEarned;
+      }
+    }
+    return sum;
+  }, [loggedActions]);
+
+  const totalActionsCount = loggedActions.length;
+
+  const levelInfo = useMemo(() => {
+    if (totalPoints < 250) {
+      const rem = 250 - totalPoints;
+      return {
+        currentLevel: 'Sprout Pioneer (Tier 1)',
+        levelNumber: 1,
+        currentMin: 0,
+        nextMax: 250,
+        progressPercent: Math.min(100, Math.max(0, Math.round((totalPoints / 250) * 100))),
+        encouragingMessage: `You're ${rem} pts away from unlocking Seedling Advocate! Keep taking green steps.`
+      };
+    } else if (totalPoints < 500) {
+      const rem = 500 - totalPoints;
+      return {
+        currentLevel: 'Seedling Advocate (Tier 2)',
+        levelNumber: 2,
+        currentMin: 250,
+        nextMax: 500,
+        progressPercent: Math.min(100, Math.max(0, Math.round(((totalPoints - 250) / 250) * 100))),
+        encouragingMessage: `Great momentum! ${rem} more points to reach Canopy Guardian.`
+      };
+    } else if (totalPoints < 1000) {
+      const rem = 1000 - totalPoints;
+      return {
+        currentLevel: 'Canopy Guardian (Tier 3)',
+        levelNumber: 3,
+        currentMin: 500,
+        nextMax: 1000,
+        progressPercent: Math.min(100, Math.max(0, Math.round(((totalPoints - 500) / 500) * 100))),
+        encouragingMessage: `Inspiring impact! Only ${rem} pts until Biosphere Sentinel.`
+      };
+    } else if (totalPoints < 2000) {
+      const rem = 2000 - totalPoints;
+      return {
+        currentLevel: 'Biosphere Sentinel (Tier 4)',
+        levelNumber: 4,
+        currentMin: 1000,
+        nextMax: 2000,
+        progressPercent: Math.min(100, Math.max(0, Math.round(((totalPoints - 1000) / 1000) * 100))),
+        encouragingMessage: `Elite climate vanguard! ${rem} points to reach Earth Vanguard.`
+      };
+    } else {
+      return {
+        currentLevel: 'Earth Vanguard (Tier 5)',
+        levelNumber: 5,
+        currentMin: 2000,
+        nextMax: 3000,
+        progressPercent: 100,
+        encouragingMessage: `Top tier unlocked! You are an exemplary planetary champion.`
+      };
+    }
+  }, [totalPoints]);
 
   // Dynamic Leaderboard: Place current user in the leaderboard and re-sort dynamically
   const { leaderboard, userRank } = useMemo(() => {
@@ -625,6 +702,9 @@ export const EcoProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         treesEquivalent,
         carMilesAvoided,
         smartphoneChargesSaved,
+        weeklyEcoPoints,
+        totalActionsCount,
+        levelInfo,
         logAction,
         deleteLog,
         addCustomAction,
