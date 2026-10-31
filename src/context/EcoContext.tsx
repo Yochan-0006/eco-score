@@ -73,6 +73,8 @@ interface EcoContextType {
   deleteCustomAction: (id: string) => void;
   joinChallenge: (challengeId: string) => void;
   claimChallenge: (challengeId: string) => void;
+  completeDailyChallenge: (challengeId: string) => boolean;
+  resetChallenges: () => void;
   updateProfile: (profile: Partial<UserProfile>) => void;
   resetAllData: () => void;
   exportDataJson: () => string;
@@ -263,10 +265,11 @@ export const EcoProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
     }
 
-    // Include points from claimed challenges
+    // Include points from completed/claimed challenges
     for (const ch of challenges) {
-      if (ch.status === 'claimed') {
+      if (ch.status === 'claimed' || ch.status === 'completed') {
         points += ch.rewardPoints;
+        tPoints += ch.rewardPoints;
       }
     }
 
@@ -308,8 +311,13 @@ export const EcoProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         sum += log.pointsEarned;
       }
     }
+    for (const ch of challenges) {
+      if (ch.status === 'completed' || ch.status === 'claimed') {
+        sum += ch.rewardPoints;
+      }
+    }
     return sum;
-  }, [loggedActions]);
+  }, [loggedActions, challenges]);
 
   const totalActionsCount = loggedActions.length;
 
@@ -367,15 +375,23 @@ export const EcoProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Dynamic Leaderboard: Place current user in the leaderboard and re-sort dynamically
   const { leaderboard, userRank } = useMemo(() => {
     const others = INITIAL_LEADERBOARD.filter(u => !u.isCurrentUser);
+    const getInitials = (n: string) => {
+      const parts = n.trim().split(/\s+/);
+      if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
+      return n.slice(0, 2).toUpperCase();
+    };
+
     const currentUserItem: LeaderboardUser = {
       id: 'current-user',
-      name: user.name,
+      name: user.name || 'Alex Rivers',
+      initials: getInitials(user.name || 'Alex Rivers'),
       avatar: user.avatar,
       points: totalPoints,
       co2SavedKg: totalCo2SavedKg,
       streak: user.streakDays,
       rank: 1,
-      badge: totalPoints >= 80 ? 'Planet Hero' : totalPoints >= 60 ? 'Green Champion' : totalPoints >= 30 ? 'Eco Explorer' : 'Getting Started',
+      level: levelInfo.currentLevel,
+      badge: levelInfo.currentLevel,
       isCurrentUser: true,
       team: 'Urban Climbers',
       countryCode: 'US',
@@ -631,6 +647,84 @@ export const EcoProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }));
   }, [fireCelebration, addToast]);
 
+  // Complete a Daily Challenge
+  const completeDailyChallenge = useCallback((challengeId: string): boolean => {
+    let earnedPoints = 0;
+    let challengeTitle = '';
+    let alreadyCompleted = false;
+
+    setChallenges(prev => {
+      const target = prev.find(c => c.id === challengeId);
+      if (!target) return prev;
+      if (target.status === 'completed' || target.status === 'claimed') {
+        alreadyCompleted = true;
+        return prev;
+      }
+
+      earnedPoints = target.rewardPoints;
+      challengeTitle = target.title;
+
+      return prev.map(ch => {
+        if (ch.id === challengeId) {
+          return {
+            ...ch,
+            currentCount: ch.targetCount,
+            status: 'completed'
+          };
+        }
+        return ch;
+      });
+    });
+
+    if (alreadyCompleted || earnedPoints === 0) {
+      return false;
+    }
+
+    // Maintain & increment streak if active today
+    const todayStr = new Date().toISOString().split('T')[0];
+    setUser(u => {
+      if (u.lastActiveDate !== todayStr) {
+        return {
+          ...u,
+          streakDays: u.streakDays + 1,
+          lastActiveDate: todayStr
+        };
+      }
+      return u;
+    });
+
+    // Check achievements with new score
+    const newTotalPts = totalPoints + earnedPoints;
+    evaluateAchievements(loggedActions, newTotalPts, totalCo2SavedKg, totalWaterSavedL);
+
+    // Celebration feedback
+    try {
+      confetti({
+        particleCount: 80,
+        spread: 70,
+        origin: { y: 0.6 },
+        colors: ['#059669', '#10b981', '#34d399', '#f59e0b', '#3b82f6']
+      });
+    } catch {
+      // ignore
+    }
+
+    addToast(
+      `Daily Challenge Completed!`,
+      `+${earnedPoints} EcoPoints awarded for "${challengeTitle}"`,
+      'award',
+      earnedPoints
+    );
+
+    return true;
+  }, [totalPoints, loggedActions, totalCo2SavedKg, totalWaterSavedL, evaluateAchievements, addToast]);
+
+  // Reset challenges
+  const resetChallenges = useCallback(() => {
+    setChallenges(INITIAL_CHALLENGES);
+    addToast('Challenges Refreshed', 'Daily challenges reset to initial state.', 'info');
+  }, [addToast]);
+
   // Update profile
   const updateProfile = useCallback((profileUpdates: Partial<UserProfile>) => {
     setUser(prev => ({ ...prev, ...profileUpdates }));
@@ -715,6 +809,8 @@ export const EcoProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         deleteCustomAction,
         joinChallenge,
         claimChallenge,
+        completeDailyChallenge,
+        resetChallenges,
         updateProfile,
         resetAllData,
         exportDataJson,

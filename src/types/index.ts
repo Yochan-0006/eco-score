@@ -70,15 +70,17 @@ export interface Achievement {
 export interface LeaderboardUser {
   id: string;
   name: string;
-  avatar: string;
+  avatar?: string;
+  initials?: string;
   points: number;
-  co2SavedKg: number;
-  streak: number;
+  co2SavedKg?: number;
+  streak?: number;
   rank: number;
-  badge: string;
+  level: string;
+  badge?: string;
   isCurrentUser?: boolean;
   team?: string;
-  countryCode: string;
+  countryCode?: string;
   recentActionTitle?: string;
 }
 
