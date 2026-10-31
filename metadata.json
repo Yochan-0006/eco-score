@@ -1,0 +1,6 @@
+{
+  "name": "EcoScore - Gamified Sustainability & Impact Tracker",
+  "description": "Gamify your everyday sustainability habits. Log eco-friendly actions, earn EcoPoints, maintain streaks, complete challenges, unlock badges, and track your carbon reduction.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

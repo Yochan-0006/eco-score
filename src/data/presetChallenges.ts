@@ -1,0 +1,93 @@
+import { Challenge } from '../types';
+
+export const INITIAL_CHALLENGES: Challenge[] = [
+  {
+    id: 'ch-daily-veggie',
+    title: 'Plant-Powered Sprint',
+    description: 'Eat at least 2 plant-based meals today to reduce livestock emissions and water footprint.',
+    category: 'food',
+    type: 'daily',
+    targetCount: 2,
+    unitLabel: 'meals',
+    rewardPoints: 40,
+    actionMatch: ['plant-based-meal'],
+    status: 'active',
+    currentCount: 1,
+    expiresInDays: 1,
+    badgeIcon: 'Salad'
+  },
+  {
+    id: 'ch-daily-hydrated',
+    title: 'Zero Plastic Sip',
+    description: 'Use a reusable bottle or mug all day without taking a single disposable cup.',
+    category: 'waste',
+    type: 'daily',
+    targetCount: 1,
+    unitLabel: 'action',
+    rewardPoints: 25,
+    actionMatch: ['reusable-cup', 'reusable-water-bottle'],
+    status: 'completed',
+    currentCount: 1,
+    expiresInDays: 1,
+    badgeIcon: 'Sparkles'
+  },
+  {
+    id: 'ch-weekly-commute',
+    title: 'Active Mobility Week',
+    description: 'Log 20 km of walking, running, biking, or public transit this week.',
+    category: 'commute',
+    type: 'weekly',
+    targetCount: 20,
+    unitLabel: 'km',
+    rewardPoints: 100,
+    actionMatch: ['bike-commute', 'public-transit', 'walk-run'],
+    status: 'active',
+    currentCount: 12,
+    expiresInDays: 4,
+    badgeIcon: 'Bike'
+  },
+  {
+    id: 'ch-weekly-laundry',
+    title: 'Sun & Breeze Laundry',
+    description: 'Line dry 3 loads of laundry instead of using the electric clothes dryer.',
+    category: 'energy',
+    type: 'weekly',
+    targetCount: 3,
+    unitLabel: 'loads',
+    rewardPoints: 75,
+    actionMatch: ['line-dry-clothes'],
+    status: 'available',
+    currentCount: 0,
+    expiresInDays: 5,
+    badgeIcon: 'Sun'
+  },
+  {
+    id: 'ch-monthly-carbon',
+    title: '30kg Carbon Abatement',
+    description: 'Prevent at least 30 kg of cumulative CO2 emissions through daily eco choices this month.',
+    category: 'all',
+    type: 'monthly',
+    targetCount: 30,
+    unitLabel: 'kg CO2',
+    rewardPoints: 250,
+    status: 'active',
+    currentCount: 18.5,
+    expiresInDays: 19,
+    badgeIcon: 'Target'
+  },
+  {
+    id: 'ch-monthly-circular',
+    title: 'Circular Hero: 10 Waste Reductions',
+    description: 'Log 10 composting, secondhand shopping, or cleanup actions this month.',
+    category: 'waste',
+    type: 'monthly',
+    targetCount: 10,
+    unitLabel: 'actions',
+    rewardPoints: 180,
+    actionMatch: ['composting-organic', 'reusable-shopping-bag', 'thrift-secondhand', 'litter-cleanup'],
+    status: 'available',
+    currentCount: 4,
+    expiresInDays: 22,
+    badgeIcon: 'Repeat'
+  }
+];
