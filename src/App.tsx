@@ -30,7 +30,7 @@ function AppContent() {
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 pt-4">
         {activeTab === 'landing' && <LandingPage setActiveTab={setActiveTab} />}
         {activeTab === 'dashboard' && <DashboardPage setActiveTab={setActiveTab} />}
-        {activeTab === 'log' && <LogActionPage />}
+        {activeTab === 'log' && <LogActionPage setActiveTab={setActiveTab} />}
         {activeTab === 'challenges' && <ChallengesPage setActiveTab={setActiveTab} />}
         {activeTab === 'leaderboard' && <LeaderboardPage />}
         {activeTab === 'achievements' && <AchievementsPage />}

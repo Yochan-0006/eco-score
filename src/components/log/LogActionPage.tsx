@@ -1,453 +1,610 @@
 import React, { useState } from 'react';
 import { useEco } from '../../context/EcoContext';
-import { ActionCategory, EcoActionDefinition } from '../../types';
-import { CATEGORY_METADATA } from '../../data/presetActions';
+import { NavigationTab, ActionCategory } from '../../types';
 import { 
-  Search, 
-  Plus, 
-  Minus, 
-  Check, 
+  Bike, 
+  Footprints, 
+  Train, 
+  Car, 
+  Salad, 
+  Utensils, 
+  CheckCircle2, 
+  Lightbulb, 
+  Thermometer, 
+  Sun, 
+  Repeat, 
   Sparkles, 
-  X, 
-  MessageSquare, 
-  Filter,
-  Trash2,
-  TreePine,
-  CheckCircle2,
-  SlidersHorizontal
+  ShoppingBag,
+  Plus,
+  Minus,
+  Check,
+  X,
+  ArrowRight,
+  TrendingUp,
+  Search,
+  Filter
 } from 'lucide-react';
+import confetti from 'canvas-confetti';
 import { IconHelper } from '../common/IconHelper';
 
-export const LogActionPage: React.FC = () => {
-  const { allActions, logAction, addCustomAction, deleteCustomAction } = useEco();
+interface LogActionPageProps {
+  setActiveTab?: (tab: NavigationTab) => void;
+}
 
-  const [activeCategory, setActiveCategory] = useState<'all' | ActionCategory>('all');
+interface ActionItem {
+  id: string;
+  title: string;
+  category: 'transport' | 'food' | 'energy' | 'waste';
+  icon: string;
+  description: string;
+  points: number;
+  unit: string;
+  co2SavedKg: number;
+}
+
+// 4 Exact Categories and Actions specified in brief
+const ACTION_CATEGORIES: {
+  id: 'transport' | 'food' | 'energy' | 'waste';
+  title: string;
+  icon: string;
+  color: string;
+  border: string;
+  badgeBg: string;
+  actions: ActionItem[];
+}[] = [
+  {
+    id: 'transport',
+    title: 'TRANSPORT',
+    icon: 'Bike',
+    color: 'text-emerald-700',
+    border: 'border-emerald-200',
+    badgeBg: 'bg-emerald-50',
+    actions: [
+      {
+        id: 'walk',
+        title: 'Walk',
+        category: 'transport',
+        icon: 'Footprints',
+        description: 'Zero-emission walking travel for commutes or daily errands.',
+        points: 20,
+        unit: 'trip',
+        co2SavedKg: 0.8
+      },
+      {
+        id: 'bicycle',
+        title: 'Bicycle',
+        category: 'transport',
+        icon: 'Bike',
+        description: 'Pedal power commute or recreational ride instead of driving.',
+        points: 25,
+        unit: 'trip',
+        co2SavedKg: 1.2
+      },
+      {
+        id: 'public-transport',
+        title: 'Public Transport',
+        category: 'transport',
+        icon: 'Train',
+        description: 'Rode bus, train, or metro to reduce collective traffic emissions.',
+        points: 20,
+        unit: 'trip',
+        co2SavedKg: 1.5
+      },
+      {
+        id: 'carpool',
+        title: 'Carpool',
+        category: 'transport',
+        icon: 'Car',
+        description: 'Shared a vehicle ride with friends, neighbors, or coworkers.',
+        points: 15,
+        unit: 'trip',
+        co2SavedKg: 1.0
+      },
+      {
+        id: 'car',
+        title: 'Car',
+        category: 'transport',
+        icon: 'Car',
+        description: 'Eco-driving trip, EV trip, or chained multiple errands efficiently.',
+        points: 5,
+        unit: 'trip',
+        co2SavedKg: 0.2
+      }
+    ]
+  },
+  {
+    id: 'food',
+    title: 'FOOD',
+    icon: 'Salad',
+    color: 'text-teal-700',
+    border: 'border-teal-200',
+    badgeBg: 'bg-teal-50',
+    actions: [
+      {
+        id: 'vegan-meal',
+        title: 'Vegan Meal',
+        category: 'food',
+        icon: 'Salad',
+        description: '100% plant-based meal avoiding livestock carbon and water footprint.',
+        points: 25,
+        unit: 'meal',
+        co2SavedKg: 1.8
+      },
+      {
+        id: 'vegetarian-meal',
+        title: 'Vegetarian Meal',
+        category: 'food',
+        icon: 'Utensils',
+        description: 'Meat-free meal packed with vegetables, legumes, or grains.',
+        points: 15,
+        unit: 'meal',
+        co2SavedKg: 1.2
+      },
+      {
+        id: 'avoided-food-waste',
+        title: 'Avoided Food Waste',
+        category: 'food',
+        icon: 'CheckCircle2',
+        description: 'Finished leftovers and discarded zero edible food into trash.',
+        points: 20,
+        unit: 'meal',
+        co2SavedKg: 0.8
+      }
+    ]
+  },
+  {
+    id: 'energy',
+    title: 'ENERGY',
+    icon: 'Zap',
+    color: 'text-amber-700',
+    border: 'border-amber-200',
+    badgeBg: 'bg-amber-50',
+    actions: [
+      {
+        id: 'turned-off-lights',
+        title: 'Turned Off Unused Lights',
+        category: 'energy',
+        icon: 'Lightbulb',
+        description: 'Switched off lights in empty rooms and hallways.',
+        points: 10,
+        unit: 'room',
+        co2SavedKg: 0.4
+      },
+      {
+        id: 'reduced-ac-usage',
+        title: 'Reduced AC Usage',
+        category: 'energy',
+        icon: 'Thermometer',
+        description: 'Adjusted thermostat or used natural ventilation to conserve power.',
+        points: 20,
+        unit: 'day',
+        co2SavedKg: 1.5
+      },
+      {
+        id: 'used-natural-light',
+        title: 'Used Natural Light',
+        category: 'energy',
+        icon: 'Sun',
+        description: 'Opened curtains and worked under sunlight instead of artificial lighting.',
+        points: 15,
+        unit: 'day',
+        co2SavedKg: 0.6
+      }
+    ]
+  },
+  {
+    id: 'waste',
+    title: 'WASTE',
+    icon: 'Repeat',
+    color: 'text-indigo-700',
+    border: 'border-indigo-200',
+    badgeBg: 'bg-indigo-50',
+    actions: [
+      {
+        id: 'recycled',
+        title: 'Recycled',
+        category: 'waste',
+        icon: 'Repeat',
+        description: 'Sorted paper, aluminum cans, glass, and rigid plastics for recycling.',
+        points: 15,
+        unit: 'bin',
+        co2SavedKg: 0.7
+      },
+      {
+        id: 'avoided-single-use-plastic',
+        title: 'Avoided Single-Use Plastic',
+        category: 'waste',
+        icon: 'Sparkles',
+        description: 'Declined disposable plastic bags, cups, straws, or cutlery.',
+        points: 15,
+        unit: 'item',
+        co2SavedKg: 0.3
+      },
+      {
+        id: 'reused-container',
+        title: 'Reused Container',
+        category: 'waste',
+        icon: 'ShoppingBag',
+        description: 'Used reusable lunchbox, stainless tumbler, or shopping tote bag.',
+        points: 15,
+        unit: 'item',
+        co2SavedKg: 0.5
+      }
+    ]
+  }
+];
+
+export const LogActionPage: React.FC<LogActionPageProps> = ({ setActiveTab }) => {
+  const { logAction, totalPoints, user } = useEco();
+
+  const [activeCategoryTab, setActiveCategoryTab] = useState<'all' | 'transport' | 'food' | 'energy' | 'waste'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [quantities, setQuantities] = useState<Record<string, number>>({});
-  const [notes, setNotes] = useState<Record<string, string>>({});
-  const [expandedNotes, setExpandedNotes] = useState<Record<string, boolean>>({});
-  const [isCustomModalOpen, setIsCustomModalOpen] = useState(false);
 
-  // Custom Action Modal Form State
-  const [customTitle, setCustomTitle] = useState('');
-  const [customCategory, setCustomCategory] = useState<ActionCategory>('waste');
-  const [customUnit, setCustomUnit] = useState('times');
-  const [customPoints, setCustomPoints] = useState(20);
-  const [customCo2, setCustomCo2] = useState(1.0);
-  const [customWater, setCustomWater] = useState(0);
-  const [customDesc, setCustomDesc] = useState('');
-  const [customFact, setCustomFact] = useState('');
+  // Success Modal State
+  const [successModal, setSuccessModal] = useState<{
+    isOpen: boolean;
+    pointsEarned: number;
+    prevScore: number;
+    newScore: number;
+    actionTitle: string;
+  } | null>(null);
 
-  // Handle quantity changes per action
-  const getQty = (action: EcoActionDefinition) => {
-    return quantities[action.id] ?? action.defaultQuantity;
-  };
-
-  const setQty = (id: string, val: number) => {
+  // Stepper helper
+  const getQty = (actionId: string) => quantities[actionId] ?? 1;
+  const updateQty = (actionId: string, delta: number) => {
     setQuantities(prev => ({
       ...prev,
-      [id]: Math.max(0.1, Number(val.toFixed(1)))
+      [actionId]: Math.max(1, (prev[actionId] ?? 1) + delta)
     }));
   };
 
-  // Filter actions
-  const filteredActions = allActions.filter(action => {
-    const matchesCategory = activeCategory === 'all' || action.category === activeCategory;
-    const matchesSearch = 
-      action.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      action.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      action.impactFact.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesCategory && matchesSearch;
-  });
+  // Select action and execute logging flow
+  const handleSelectAction = (action: ActionItem) => {
+    const qty = getQty(action.id);
+    const result = logAction(action.id, qty);
 
-  const handleLogClick = (action: EcoActionDefinition) => {
-    const qty = getQty(action);
-    const note = notes[action.id] || '';
-    logAction(action.id, qty, note);
-    // clear specific note after logging
-    if (note) {
-      setNotes(prev => ({ ...prev, [action.id]: '' }));
+    const prevScore = result?.prevScore ?? totalPoints;
+    const pointsEarned = result?.pointsEarned ?? (action.points * qty);
+    const newScore = result?.newScore ?? (prevScore + pointsEarned);
+
+    // Trigger celebration animation
+    try {
+      confetti({
+        particleCount: 65,
+        spread: 60,
+        origin: { y: 0.6 },
+        colors: ['#059669', '#10b981', '#34d399', '#f59e0b', '#3b82f6']
+      });
+    } catch {
+      // fallback
     }
-  };
 
-  const handleCreateCustomAction = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!customTitle.trim()) return;
-
-    addCustomAction({
-      title: customTitle.trim(),
-      category: customCategory,
-      unit: customUnit.trim() || 'action',
-      defaultQuantity: 1,
-      basePoints: Number(customPoints) || 15,
-      co2PerUnit: Number(customCo2) || 0.5,
-      waterPerUnit: Number(customWater) || 0,
-      wastePerUnit: 0,
-      icon: customCategory === 'commute' ? 'Bike' : customCategory === 'food' ? 'Salad' : customCategory === 'energy' ? 'Sun' : customCategory === 'waste' ? 'Repeat' : 'Droplets',
-      description: customDesc.trim() || 'Custom sustainable daily habit.',
-      impactFact: customFact.trim() || 'Every mindful choice avoids unnecessary carbon and resource usage.'
+    // Open Success Modal
+    setSuccessModal({
+      isOpen: true,
+      pointsEarned,
+      prevScore,
+      newScore,
+      actionTitle: action.title
     });
-
-    setIsCustomModalOpen(false);
-    // Reset form
-    setCustomTitle('');
-    setCustomDesc('');
-    setCustomFact('');
-    setCustomPoints(20);
-    setCustomCo2(1.0);
   };
+
+  // Filter categories and actions
+  const filteredCategories = ACTION_CATEGORIES.map(cat => {
+    if (activeCategoryTab !== 'all' && activeCategoryTab !== cat.id) {
+      return null;
+    }
+    const filteredActions = cat.actions.filter(a => {
+      if (!searchQuery.trim()) return true;
+      const q = searchQuery.toLowerCase();
+      return a.title.toLowerCase().includes(q) || a.description.toLowerCase().includes(q);
+    });
+    return {
+      ...cat,
+      actions: filteredActions
+    };
+  }).filter(Boolean) as typeof ACTION_CATEGORIES;
+
+  const totalVisibleActions = filteredCategories.reduce((sum, c) => sum + c.actions.length, 0);
 
   return (
     <div className="space-y-8 py-4 pb-20">
       
-      {/* Page Header */}
+      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-zinc-900 tracking-tight">
             Log Sustainable Action
           </h1>
           <p className="text-xs sm:text-sm text-zinc-500 mt-1">
-            Choose from science-backed categories or create your own custom green habit.
+            Select an eco action to record it to your activity history, earn points, and build your streak.
           </p>
         </div>
 
-        <button
-          onClick={() => setIsCustomModalOpen(true)}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white text-xs sm:text-sm font-semibold shadow-xs transition-colors cursor-pointer self-start sm:self-auto"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Create Custom Habit</span>
-        </button>
+        {/* Live Score Badge */}
+        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-emerald-50 border border-emerald-200/90 text-emerald-950 text-xs font-bold self-start sm:self-auto">
+          <Sparkles className="w-4 h-4 text-emerald-600" />
+          <span>Current Score: {totalPoints} EcoPoints</span>
+        </div>
       </div>
 
-      {/* Search & Category Filter Bar */}
-      <div className="space-y-3">
-        <div className="relative">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
-          <input
-            type="text"
-            placeholder="Search habits (e.g., bicycle, compost, cold wash, produce, transit)..."
-            value={searchQuery}
-            onChange={e => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 bg-white rounded-xl border border-zinc-200 text-sm text-zinc-900 focus:outline-emerald-600 focus:ring-1 focus:ring-emerald-600 shadow-2xs"
-          />
-          {searchQuery && (
-            <button
-              onClick={() => setSearchQuery('')}
-              className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-zinc-400 hover:text-zinc-600 rounded"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          )}
-        </div>
-
-        {/* Category Pills / Filter Tabs */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs">
+      {/* Filter Tabs & Search Bar */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+        {/* Category Tabs */}
+        <div className="flex items-center gap-1.5 p-1 bg-zinc-100 rounded-xl w-fit overflow-x-auto text-xs">
           <button
-            onClick={() => setActiveCategory('all')}
-            className={`px-3 py-1.5 font-semibold rounded-lg shrink-0 transition-colors cursor-pointer ${
-              activeCategory === 'all'
-                ? 'bg-zinc-900 text-white shadow-2xs'
-                : 'bg-white border border-zinc-200 text-zinc-700 hover:bg-zinc-50'
+            onClick={() => setActiveCategoryTab('all')}
+            className={`px-3 py-1.5 font-semibold rounded-lg transition-colors cursor-pointer ${
+              activeCategoryTab === 'all'
+                ? 'bg-white text-zinc-900 shadow-2xs'
+                : 'text-zinc-600 hover:text-zinc-900'
             }`}
           >
-            All Actions ({allActions.length})
+            All Categories
           </button>
-          
-          {(['commute', 'food', 'energy', 'waste', 'water', 'community'] as ActionCategory[]).map(cat => {
-            const meta = CATEGORY_METADATA[cat];
-            const isActive = activeCategory === cat;
-            return (
-              <button
-                key={cat}
-                onClick={() => setActiveCategory(cat)}
-                className={`inline-flex items-center gap-1.5 px-3 py-1.5 font-semibold rounded-lg shrink-0 transition-colors cursor-pointer ${
-                  isActive
-                    ? 'bg-emerald-700 text-white shadow-2xs'
-                    : 'bg-white border border-zinc-200 text-zinc-700 hover:bg-zinc-50'
-                }`}
-              >
-                <IconHelper name={meta.iconName} className="w-3.5 h-3.5" />
-                <span>{meta.label}</span>
-              </button>
-            );
-          })}
+          <button
+            onClick={() => setActiveCategoryTab('transport')}
+            className={`inline-flex items-center gap-1.5 px-3 py-1.5 font-semibold rounded-lg transition-colors cursor-pointer ${
+              activeCategoryTab === 'transport'
+                ? 'bg-emerald-700 text-white shadow-2xs'
+                : 'text-zinc-600 hover:text-zinc-900'
+            }`}
+          >
+            <Bike className="w-3.5 h-3.5" />
+            <span>Transport</span>
+          </button>
+          <button
+            onClick={() => setActiveCategoryTab('food')}
+            className={`inline-flex items-center gap-1.5 px-3 py-1.5 font-semibold rounded-lg transition-colors cursor-pointer ${
+              activeCategoryTab === 'food'
+                ? 'bg-teal-700 text-white shadow-2xs'
+                : 'text-zinc-600 hover:text-zinc-900'
+            }`}
+          >
+            <Salad className="w-3.5 h-3.5" />
+            <span>Food</span>
+          </button>
+          <button
+            onClick={() => setActiveCategoryTab('energy')}
+            className={`inline-flex items-center gap-1.5 px-3 py-1.5 font-semibold rounded-lg transition-colors cursor-pointer ${
+              activeCategoryTab === 'energy'
+                ? 'bg-amber-600 text-white shadow-2xs'
+                : 'text-zinc-600 hover:text-zinc-900'
+            }`}
+          >
+            <Lightbulb className="w-3.5 h-3.5" />
+            <span>Energy</span>
+          </button>
+          <button
+            onClick={() => setActiveCategoryTab('waste')}
+            className={`inline-flex items-center gap-1.5 px-3 py-1.5 font-semibold rounded-lg transition-colors cursor-pointer ${
+              activeCategoryTab === 'waste'
+                ? 'bg-indigo-700 text-white shadow-2xs'
+                : 'text-zinc-600 hover:text-zinc-900'
+            }`}
+          >
+            <Repeat className="w-3.5 h-3.5" />
+            <span>Waste</span>
+          </button>
+        </div>
+
+        {/* Search */}
+        <div className="relative w-full md:w-64">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
+          <input
+            type="text"
+            placeholder="Search action..."
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            className="w-full pl-9 pr-3 py-1.5 bg-white rounded-lg border border-zinc-200 text-xs text-zinc-900 focus:outline-emerald-600 shadow-2xs"
+          />
         </div>
       </div>
 
-      {/* Actions Grid */}
-      {filteredActions.length === 0 ? (
+      {/* 4 Categorized Sections */}
+      {totalVisibleActions === 0 ? (
         <div className="p-12 text-center rounded-2xl bg-white border border-zinc-200/80 space-y-3">
-          <p className="text-base font-bold text-zinc-800">No matching eco habits found</p>
-          <p className="text-xs text-zinc-500 max-w-sm mx-auto">
-            Try searching for another keyword or create this action as a custom habit.
-          </p>
+          <p className="text-sm font-bold text-zinc-800">No actions matched "{searchQuery}"</p>
           <button
-            onClick={() => { setSearchQuery(''); setActiveCategory('all'); }}
+            onClick={() => { setSearchQuery(''); setActiveCategoryTab('all'); }}
             className="px-3.5 py-1.5 text-xs font-semibold rounded-lg bg-zinc-100 text-zinc-700 hover:bg-zinc-200"
           >
-            Clear Filters
+            Reset Filters
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {filteredActions.map(action => {
-            const qty = getQty(action);
-            const calculatedPoints = Math.round(action.basePoints * qty);
-            const calculatedCo2 = Number((action.co2PerUnit * qty).toFixed(2));
-            const calculatedWater = Math.round(action.waterPerUnit * qty);
-            const isNoteOpen = expandedNotes[action.id];
-
-            return (
-              <div
-                key={action.id}
-                className="rounded-2xl bg-white border border-zinc-200/90 shadow-2xs hover:shadow-xs transition-all flex flex-col justify-between p-5 relative group"
-              >
-                {/* Custom badge or delete button if custom */}
-                {action.isCustom && (
-                  <div className="absolute top-3 right-3 flex items-center gap-1">
-                    <span className="text-[10px] font-bold uppercase text-emerald-800 bg-emerald-50 px-1.5 py-0.5 rounded">
-                      Custom
-                    </span>
-                    <button
-                      onClick={() => deleteCustomAction(action.id)}
-                      className="p-1 text-zinc-400 hover:text-rose-600 rounded transition-colors"
-                      title="Delete custom habit"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
+        <div className="space-y-10">
+          {filteredCategories.map(category => (
+            <div key={category.id} className="space-y-4">
+              
+              {/* Category Header */}
+              <div className="flex items-center justify-between border-b border-zinc-200/80 pb-2">
+                <div className="flex items-center gap-2">
+                  <div className={`w-7 h-7 rounded-lg flex items-center justify-center border ${category.border} ${category.badgeBg} ${category.color}`}>
+                    <IconHelper name={category.icon} className="w-4 h-4" />
                   </div>
-                )}
-
-                <div className="space-y-3">
-                  {/* Category & Icon */}
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-10 h-10 rounded-xl bg-zinc-100 text-zinc-800 flex items-center justify-center shrink-0">
-                      <IconHelper name={action.icon} className="w-5 h-5" />
-                    </div>
-                    <div className="min-w-0 pr-12">
-                      <p className="text-xs text-zinc-500 capitalize">{action.category}</p>
-                      <h3 className="text-sm font-bold text-zinc-900 leading-snug truncate">
-                        {action.title}
-                      </h3>
-                    </div>
-                  </div>
-
-                  <p className="text-xs text-zinc-600 line-clamp-2">
-                    {action.description}
-                  </p>
-
-                  <div className="p-2.5 rounded-lg bg-zinc-50 text-[11px] text-zinc-600 border border-zinc-100">
-                    <strong className="text-zinc-700">Impact math: </strong>
-                    <span>{action.impactFact}</span>
-                  </div>
+                  <h2 className="text-sm sm:text-base font-extrabold tracking-wider text-zinc-900">
+                    {category.title}
+                  </h2>
                 </div>
-
-                {/* Interactive Controls & Live Calculation */}
-                <div className="pt-4 mt-3 border-t border-zinc-100 space-y-3">
-                  
-                  {/* Stepper */}
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-semibold text-zinc-700">Quantity</span>
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => setQty(action.id, Math.max(0.5, qty - (action.unit === 'km' ? 2 : 1)))}
-                        className="w-7 h-7 rounded-lg border border-zinc-200 bg-white hover:bg-zinc-100 flex items-center justify-center text-zinc-600 cursor-pointer"
-                        aria-label="Decrease"
-                      >
-                        <Minus className="w-3.5 h-3.5" />
-                      </button>
-                      <div className="flex items-center gap-1 font-mono text-xs font-bold text-zinc-900 min-w-14 justify-center">
-                        <input
-                          type="number"
-                          step={action.unit === 'kg' ? 0.5 : 1}
-                          min={0.1}
-                          value={qty}
-                          onChange={e => setQty(action.id, parseFloat(e.target.value) || 1)}
-                          className="w-10 text-center bg-transparent border-b border-zinc-300 focus:outline-emerald-600"
-                        />
-                        <span className="text-[11px] font-sans font-normal text-zinc-500">{action.unit}</span>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => setQty(action.id, qty + (action.unit === 'km' ? 2 : 1))}
-                        className="w-7 h-7 rounded-lg border border-zinc-200 bg-white hover:bg-zinc-100 flex items-center justify-center text-zinc-600 cursor-pointer"
-                        aria-label="Increase"
-                      >
-                        <Plus className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Dynamic calculation live badge */}
-                  <div className="flex items-center justify-between p-2 rounded-lg bg-emerald-50/70 border border-emerald-100 text-xs">
-                    <span className="font-mono font-bold text-emerald-800">
-                      +{calculatedPoints} EcoPoints
-                    </span>
-                    <div className="flex items-center gap-2 text-zinc-600 font-mono text-[11px]">
-                      <span>-{calculatedCo2} kg CO₂</span>
-                      {calculatedWater > 0 && <span>· -{calculatedWater}L H₂O</span>}
-                    </div>
-                  </div>
-
-                  {/* Optional Note Toggle */}
-                  <div>
-                    {!isNoteOpen ? (
-                      <button
-                        type="button"
-                        onClick={() => setExpandedNotes(p => ({ ...p, [action.id]: true }))}
-                        className="inline-flex items-center gap-1 text-[11px] text-zinc-500 hover:text-zinc-800 transition-colors"
-                      >
-                        <MessageSquare className="w-3 h-3" />
-                        <span>Add note or detail (optional)</span>
-                      </button>
-                    ) : (
-                      <div className="space-y-1">
-                        <input
-                          type="text"
-                          placeholder="e.g. Cycled via sunny river trail..."
-                          value={notes[action.id] || ''}
-                          onChange={e => setNotes(prev => ({ ...prev, [action.id]: e.target.value }))}
-                          className="w-full text-xs px-2.5 py-1.5 rounded-lg border border-zinc-200 focus:outline-emerald-600"
-                        />
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Primary Log Button */}
-                  <button
-                    onClick={() => handleLogClick(action)}
-                    className="w-full inline-flex items-center justify-center gap-1.5 py-2 px-3 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-xl shadow-xs transition-colors cursor-pointer"
-                  >
-                    <Check className="w-4 h-4" />
-                    <span>Log Action (+{calculatedPoints} pts)</span>
-                  </button>
-                </div>
+                <span className="text-xs font-mono text-zinc-400 font-medium">
+                  {category.actions.length} {category.actions.length === 1 ? 'action' : 'actions'}
+                </span>
               </div>
-            );
-          })}
+
+              {/* Action Cards Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {category.actions.map(action => {
+                  const qty = getQty(action.id);
+                  const totalActionPoints = action.points * qty;
+
+                  return (
+                    <div
+                      key={action.id}
+                      className="rounded-2xl bg-white border border-zinc-200/90 shadow-2xs hover:shadow-xs hover:border-zinc-300 transition-all p-5 flex flex-col justify-between group"
+                    >
+                      <div className="space-y-3">
+                        {/* Header: Icon & Points */}
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex items-center gap-3">
+                            <div className="w-11 h-11 rounded-xl bg-zinc-100 group-hover:bg-emerald-50 text-zinc-800 group-hover:text-emerald-700 flex items-center justify-center transition-colors shrink-0">
+                              <IconHelper name={action.icon} className="w-5 h-5" />
+                            </div>
+                            <div>
+                              <h3 className="text-sm font-bold text-zinc-900 leading-snug">
+                                {action.title}
+                              </h3>
+                              <span className="text-[11px] text-zinc-400 uppercase font-semibold">
+                                {category.title}
+                              </span>
+                            </div>
+                          </div>
+
+                          <span className="text-xs font-mono font-bold text-emerald-800 bg-emerald-50 border border-emerald-200/80 px-2.5 py-1 rounded-lg shrink-0">
+                            +{action.points} pts
+                          </span>
+                        </div>
+
+                        {/* Description */}
+                        <p className="text-xs text-zinc-600 leading-relaxed">
+                          {action.description}
+                        </p>
+                      </div>
+
+                      {/* Controls and Select Button */}
+                      <div className="pt-4 mt-3 border-t border-zinc-100 space-y-3">
+                        
+                        {/* Optional Quantity Adjuster */}
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-zinc-500 font-medium">Quantity</span>
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => updateQty(action.id, -1)}
+                              className="w-6 h-6 rounded-md border border-zinc-200 bg-zinc-50 hover:bg-zinc-100 flex items-center justify-center text-zinc-600 cursor-pointer"
+                              aria-label="Decrease quantity"
+                            >
+                              <Minus className="w-3 h-3" />
+                            </button>
+                            <span className="font-mono font-bold text-zinc-800 min-w-8 text-center">
+                              {qty} {action.unit}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => updateQty(action.id, 1)}
+                              className="w-6 h-6 rounded-md border border-zinc-200 bg-zinc-50 hover:bg-zinc-100 flex items-center justify-center text-zinc-600 cursor-pointer"
+                              aria-label="Increase quantity"
+                            >
+                              <Plus className="w-3 h-3" />
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Select Action Button */}
+                        <button
+                          onClick={() => handleSelectAction(action)}
+                          className="w-full inline-flex items-center justify-center gap-2 py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-xs transition-all cursor-pointer"
+                        >
+                          <Check className="w-4 h-4" />
+                          <span>Select Action (+{totalActionPoints} pts)</span>
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
         </div>
       )}
 
-      {/* Custom Action Creator Modal */}
-      {isCustomModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-900/50 backdrop-blur-xs animate-in fade-in">
+      {/* 8. POLISHED SUCCESS MODAL */}
+      {successModal && successModal.isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-900/50 backdrop-blur-xs animate-in fade-in duration-200">
           <div 
-            className="relative w-full max-w-md bg-white rounded-2xl border border-zinc-200/90 shadow-2xl p-6"
+            className="relative w-full max-w-md bg-white rounded-3xl p-6 sm:p-8 border border-zinc-200/90 shadow-2xl text-center overflow-hidden animate-in zoom-in-95 duration-200"
             role="dialog"
             aria-modal="true"
           >
-            <div className="flex items-center justify-between pb-3 border-b border-zinc-100">
-              <div>
-                <h3 className="text-base font-bold text-zinc-900">Create Custom Habit</h3>
-                <p className="text-xs text-zinc-500">Add an eco-friendly activity unique to your lifestyle</p>
-              </div>
-              <button
-                onClick={() => setIsCustomModalOpen(false)}
-                className="p-1.5 text-zinc-400 hover:text-zinc-600 rounded-lg hover:bg-zinc-100"
-              >
-                <X className="w-4 h-4" />
-              </button>
+            {/* Ambient emerald glow */}
+            <div className="absolute -top-16 left-1/2 -translate-x-1/2 w-48 h-48 bg-emerald-500/20 rounded-full blur-2xl pointer-events-none" />
+
+            {/* Dismiss button */}
+            <button
+              onClick={() => setSuccessModal(null)}
+              className="absolute top-4 right-4 p-1.5 rounded-lg text-zinc-400 hover:text-zinc-600 hover:bg-zinc-100 transition-colors"
+              aria-label="Close"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            {/* Celebration Emblem Animation */}
+            <div className="mx-auto w-16 h-16 rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-500 text-white flex items-center justify-center shadow-lg shadow-emerald-500/30 mb-4 animate-bounce">
+              <span className="text-3xl" role="img" aria-label="sprout">🌱</span>
             </div>
 
-            <form onSubmit={handleCreateCustomAction} className="mt-4 space-y-3.5">
-              <div>
-                <label className="block text-xs font-medium text-zinc-700 mb-1">Habit Name</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Mended Vintage Clothing, Solar Balcony Run"
-                  value={customTitle}
-                  onChange={e => setCustomTitle(e.target.value)}
-                  className="w-full text-xs px-3 py-2 border border-zinc-200 rounded-lg focus:outline-emerald-600 text-zinc-900"
+            {/* Exact Required Title */}
+            <h2 className="text-2xl font-extrabold text-zinc-900 tracking-tight">
+              Great choice! 🌱
+            </h2>
+
+            {/* Exact Required Points Badge */}
+            <div className="my-3 inline-flex items-center justify-center gap-1.5 px-4 py-1.5 rounded-full bg-emerald-50 border border-emerald-200">
+              <Sparkles className="w-4 h-4 text-emerald-600" />
+              <span className="text-base font-extrabold font-mono text-emerald-800">
+                +{successModal.pointsEarned} EcoPoints
+              </span>
+            </div>
+
+            {/* Exact Required Score Change Text */}
+            <div className="p-4 my-4 rounded-2xl bg-zinc-50 border border-zinc-200/80 space-y-2">
+              <p className="text-sm font-semibold text-zinc-800">
+                Your EcoScore increased from{' '}
+                <span className="font-mono font-bold text-zinc-900">{successModal.prevScore}</span> to{' '}
+                <span className="font-mono font-bold text-emerald-700">{successModal.newScore}</span>
+              </p>
+
+              {/* Visual Score Progress Bar */}
+              <div className="w-full h-2.5 bg-zinc-200 rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-gradient-to-r from-emerald-500 to-teal-400 rounded-full transition-all duration-700"
+                  style={{ width: '100%' }}
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-medium text-zinc-700 mb-1">Category</label>
-                  <select
-                    value={customCategory}
-                    onChange={e => setCustomCategory(e.target.value as ActionCategory)}
-                    className="w-full text-xs px-3 py-2 border border-zinc-200 rounded-lg focus:outline-emerald-600 bg-white text-zinc-900"
-                  >
-                    <option value="commute">Commute</option>
-                    <option value="food">Food</option>
-                    <option value="energy">Energy</option>
-                    <option value="waste">Waste</option>
-                    <option value="water">Water</option>
-                    <option value="community">Community</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-zinc-700 mb-1">Unit of Measure</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. km, item, hr, load"
-                    value={customUnit}
-                    onChange={e => setCustomUnit(e.target.value)}
-                    className="w-full text-xs px-3 py-2 border border-zinc-200 rounded-lg focus:outline-emerald-600 text-zinc-900"
-                  />
-                </div>
-              </div>
+              <p className="text-[11px] text-zinc-500">
+                Action recorded in local activity history and streak maintained!
+              </p>
+            </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-medium text-zinc-700 mb-1">Base EcoPoints</label>
-                  <input
-                    type="number"
-                    min={5}
-                    max={200}
-                    value={customPoints}
-                    onChange={e => setCustomPoints(Number(e.target.value))}
-                    className="w-full text-xs px-3 py-2 border border-zinc-200 rounded-lg focus:outline-emerald-600 font-mono text-zinc-900"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-zinc-700 mb-1">CO₂ Saved per Unit (kg)</label>
-                  <input
-                    type="number"
-                    step={0.1}
-                    min={0}
-                    value={customCo2}
-                    onChange={e => setCustomCo2(Number(e.target.value))}
-                    className="w-full text-xs px-3 py-2 border border-zinc-200 rounded-lg focus:outline-emerald-600 font-mono text-zinc-900"
-                  />
-                </div>
-              </div>
+            {/* Action buttons */}
+            <div className="flex flex-col sm:flex-row items-center gap-2.5 pt-2">
+              <button
+                onClick={() => setSuccessModal(null)}
+                className="w-full sm:flex-1 py-2.5 px-4 bg-zinc-100 hover:bg-zinc-200 text-zinc-800 text-xs font-semibold rounded-xl transition-colors cursor-pointer"
+              >
+                Log Another Action
+              </button>
 
-              <div>
-                <label className="block text-xs font-medium text-zinc-700 mb-1">Description</label>
-                <input
-                  type="text"
-                  placeholder="Short note explaining this action"
-                  value={customDesc}
-                  onChange={e => setCustomDesc(e.target.value)}
-                  className="w-full text-xs px-3 py-2 border border-zinc-200 rounded-lg focus:outline-emerald-600 text-zinc-900"
-                />
-              </div>
-
-              <div className="pt-2 flex justify-end gap-2">
+              {setActiveTab && (
                 <button
-                  type="button"
-                  onClick={() => setIsCustomModalOpen(false)}
-                  className="px-3 py-1.5 text-xs text-zinc-600 hover:bg-zinc-100 rounded-lg"
+                  onClick={() => {
+                    setSuccessModal(null);
+                    setActiveTab('dashboard');
+                  }}
+                  className="w-full sm:flex-1 py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-xl shadow-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
                 >
-                  Cancel
+                  <span>View in Dashboard</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
                 </button>
-                <button
-                  type="submit"
-                  className="px-4 py-1.5 text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg shadow-xs cursor-pointer"
-                >
-                  Create Habit
-                </button>
-              </div>
-            </form>
+              )}
+            </div>
+
           </div>
         </div>
       )}
+
     </div>
   );
 };

@@ -59,7 +59,12 @@ interface EcoContextType {
   };
 
   // Actions
-  logAction: (actionId: string, quantity: number, note?: string) => void;
+  logAction: (actionId: string, quantity: number, note?: string) => {
+    prevScore: number;
+    newScore: number;
+    pointsEarned: number;
+    actionTitle: string;
+  } | null;
   deleteLog: (logId: string) => void;
   addCustomAction: (actionData: Omit<EcoActionDefinition, 'id' | 'isCustom'>) => void;
   deleteCustomAction: (id: string) => void;
@@ -518,10 +523,12 @@ export const EcoProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Log an Action
   const logAction = useCallback((actionId: string, quantity: number, note?: string) => {
     const def = allActions.find(a => a.id === actionId);
-    if (!def) return;
+    if (!def) return null;
 
     const qty = Math.max(0.1, Number(quantity) || 1);
     const pointsEarned = Math.round(def.basePoints * qty);
+    const prevScore = totalPoints;
+    const newScore = totalPoints + pointsEarned;
     const co2SavedKg = Number((def.co2PerUnit * qty).toFixed(2));
     const waterSavedL = Math.round(def.waterPerUnit * qty);
     const wasteSavedKg = Number((def.wastePerUnit * qty).toFixed(2));
@@ -573,7 +580,14 @@ export const EcoProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       'success',
       pointsEarned
     );
-  }, [allActions, evaluateAchievements, updateChallengeProgress, addToast]);
+
+    return {
+      prevScore,
+      newScore,
+      pointsEarned,
+      actionTitle: def.title
+    };
+  }, [allActions, totalPoints, evaluateAchievements, updateChallengeProgress, addToast]);
 
   // Delete / Undo a log
   const deleteLog = useCallback((logId: string) => {

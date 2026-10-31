@@ -1,4 +1,5 @@
 export type ActionCategory = 
+  | 'transport'
   | 'commute' 
   | 'food' 
   | 'energy' 
