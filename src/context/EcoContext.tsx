@@ -55,8 +55,11 @@ interface EcoContextType {
     currentMin: number;
     nextMax: number;
     progressPercent: number;
+    pointsToNext: number;
     encouragingMessage: string;
   };
+  unlockedAchievementModal: Achievement | null;
+  dismissAchievementModal: () => void;
 
   // Actions
   logAction: (actionId: string, quantity: number, note?: string) => {
@@ -147,6 +150,12 @@ export const EcoProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     subtitle: string;
     points?: number;
   } | null>(null);
+
+  const [unlockedAchievementModal, setUnlockedAchievementModal] = useState<Achievement | null>(null);
+
+  const dismissAchievementModal = useCallback(() => {
+    setUnlockedAchievementModal(null);
+  }, []);
 
   // Sync to localStorage
   useEffect(() => {
@@ -305,54 +314,52 @@ export const EcoProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const totalActionsCount = loggedActions.length;
 
   const levelInfo = useMemo(() => {
-    if (totalPoints < 250) {
-      const rem = 250 - totalPoints;
+    if (totalPoints < 30) {
+      const rem = 30 - totalPoints;
+      const progressPercent = Math.min(100, Math.max(0, Math.round((totalPoints / 30) * 100)));
       return {
-        currentLevel: 'Sprout Pioneer (Tier 1)',
+        currentLevel: 'Getting Started',
         levelNumber: 1,
         currentMin: 0,
-        nextMax: 250,
-        progressPercent: Math.min(100, Math.max(0, Math.round((totalPoints / 250) * 100))),
-        encouragingMessage: `You're ${rem} pts away from unlocking Seedling Advocate! Keep taking green steps.`
+        nextMax: 30,
+        progressPercent,
+        pointsToNext: rem,
+        encouragingMessage: `You're ${rem} pts away from becoming an Eco Explorer! Log daily actions to level up.`
       };
-    } else if (totalPoints < 500) {
-      const rem = 500 - totalPoints;
+    } else if (totalPoints < 60) {
+      const rem = 60 - totalPoints;
+      const progressPercent = Math.min(100, Math.max(0, Math.round(((totalPoints - 30) / (60 - 30)) * 100)));
       return {
-        currentLevel: 'Seedling Advocate (Tier 2)',
+        currentLevel: 'Eco Explorer',
         levelNumber: 2,
-        currentMin: 250,
-        nextMax: 500,
-        progressPercent: Math.min(100, Math.max(0, Math.round(((totalPoints - 250) / 250) * 100))),
-        encouragingMessage: `Great momentum! ${rem} more points to reach Canopy Guardian.`
+        currentMin: 30,
+        nextMax: 60,
+        progressPercent,
+        pointsToNext: rem,
+        encouragingMessage: `Awesome momentum! ${rem} more points to reach Green Champion.`
       };
-    } else if (totalPoints < 1000) {
-      const rem = 1000 - totalPoints;
+    } else if (totalPoints < 80) {
+      const rem = 80 - totalPoints;
+      const progressPercent = Math.min(100, Math.max(0, Math.round(((totalPoints - 60) / (80 - 60)) * 100)));
       return {
-        currentLevel: 'Canopy Guardian (Tier 3)',
+        currentLevel: 'Green Champion',
         levelNumber: 3,
-        currentMin: 500,
-        nextMax: 1000,
-        progressPercent: Math.min(100, Math.max(0, Math.round(((totalPoints - 500) / 500) * 100))),
-        encouragingMessage: `Inspiring impact! Only ${rem} pts until Biosphere Sentinel.`
-      };
-    } else if (totalPoints < 2000) {
-      const rem = 2000 - totalPoints;
-      return {
-        currentLevel: 'Biosphere Sentinel (Tier 4)',
-        levelNumber: 4,
-        currentMin: 1000,
-        nextMax: 2000,
-        progressPercent: Math.min(100, Math.max(0, Math.round(((totalPoints - 1000) / 1000) * 100))),
-        encouragingMessage: `Elite climate vanguard! ${rem} points to reach Earth Vanguard.`
+        currentMin: 60,
+        nextMax: 80,
+        progressPercent,
+        pointsToNext: rem,
+        encouragingMessage: `Almost there! Just ${rem} points until you become a Planet Hero.`
       };
     } else {
+      const progressPercent = totalPoints >= 100 ? 100 : Math.min(100, Math.max(0, Math.round(((totalPoints - 80) / (100 - 80)) * 100)));
       return {
-        currentLevel: 'Earth Vanguard (Tier 5)',
-        levelNumber: 5,
-        currentMin: 2000,
-        nextMax: 3000,
-        progressPercent: 100,
-        encouragingMessage: `Top tier unlocked! You are an exemplary planetary champion.`
+        currentLevel: 'Planet Hero',
+        levelNumber: 4,
+        currentMin: 80,
+        nextMax: 100,
+        progressPercent,
+        pointsToNext: Math.max(0, 100 - totalPoints),
+        encouragingMessage: `Top tier unlocked! You are a recognized Planet Hero.`
       };
     }
   }, [totalPoints]);
@@ -368,7 +375,7 @@ export const EcoProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       co2SavedKg: totalCo2SavedKg,
       streak: user.streakDays,
       rank: 1,
-      badge: totalPoints > 1000 ? 'Diamond Earthkeeper' : totalPoints > 700 ? 'Emerald Vanguard' : totalPoints > 400 ? 'Canopy Guardian' : 'Sprout Scout',
+      badge: totalPoints >= 80 ? 'Planet Hero' : totalPoints >= 60 ? 'Green Champion' : totalPoints >= 30 ? 'Eco Explorer' : 'Getting Started',
       isCurrentUser: true,
       team: 'Urban Climbers',
       countryCode: 'US',
@@ -399,61 +406,43 @@ export const EcoProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             progress = currentActions.length >= 1 ? 100 : 0;
             shouldUnlock = currentActions.length >= 1;
             break;
-          case 'ach-streak-3':
-            progress = Math.min(100, Math.round((user.streakDays / 3) * 100));
-            shouldUnlock = user.streakDays >= 3;
+          case 'ach-green-traveler': {
+            const hasTravel = currentActions.some(a => a.category === 'transport' || a.category === 'commute');
+            progress = hasTravel ? 100 : 0;
+            shouldUnlock = hasTravel;
             break;
-          case 'ach-streak-7':
+          }
+          case 'ach-recycle-master': {
+            const hasRecycle = currentActions.some(a => a.category === 'waste');
+            progress = hasRecycle ? 100 : 0;
+            shouldUnlock = hasRecycle;
+            break;
+          }
+          case 'ach-energy-saver': {
+            const hasEnergy = currentActions.some(a => a.category === 'energy');
+            progress = hasEnergy ? 100 : 0;
+            shouldUnlock = hasEnergy;
+            break;
+          }
+          case 'ach-conscious-eater': {
+            const hasFood = currentActions.some(a => a.category === 'food');
+            progress = hasFood ? 100 : 0;
+            shouldUnlock = hasFood;
+            break;
+          }
+          case 'ach-week-warrior':
             progress = Math.min(100, Math.round((user.streakDays / 7) * 100));
             shouldUnlock = user.streakDays >= 7;
             break;
-          case 'ach-carbon-25':
-            progress = Math.min(100, Math.round((co2 / 25) * 100));
-            shouldUnlock = co2 >= 25;
-            break;
-          case 'ach-carbon-100':
-            progress = Math.min(100, Math.round((co2 / 100) * 100));
-            shouldUnlock = co2 >= 100;
-            break;
-          case 'ach-water-1000':
-            progress = Math.min(100, Math.round((water / 3000) * 100));
-            shouldUnlock = water >= 3000;
-            break;
-          case 'ach-pedal-50': {
-            const bikeKm = currentActions
-              .filter(a => a.category === 'commute' && (a.actionId === 'bike-commute' || a.actionId === 'walk-run'))
-              .reduce((sum, a) => sum + a.quantity, 0);
-            progress = Math.min(100, Math.round((bikeKm / 50) * 100));
-            shouldUnlock = bikeKm >= 50;
+          case 'ach-green-warrior': {
+            const val = Math.max((points / 50) * 100, (currentActions.length / 5) * 100);
+            progress = Math.min(100, Math.round(val));
+            shouldUnlock = points >= 50 || currentActions.length >= 5;
             break;
           }
-          case 'ach-plant-10': {
-            const plantMeals = currentActions
-              .filter(a => a.category === 'food')
-              .reduce((sum, a) => sum + a.quantity, 0);
-            progress = Math.min(100, Math.round((plantMeals / 10) * 100));
-            shouldUnlock = plantMeals >= 10;
-            break;
-          }
-          case 'ach-sun-dry': {
-            const energyActions = currentActions.filter(a => a.category === 'energy').length;
-            progress = Math.min(100, Math.round((energyActions / 5) * 100));
-            shouldUnlock = energyActions >= 5;
-            break;
-          }
-          case 'ach-circular-15': {
-            const circularActions = currentActions.filter(a => a.category === 'waste').length;
-            progress = Math.min(100, Math.round((circularActions / 15) * 100));
-            shouldUnlock = circularActions >= 15;
-            break;
-          }
-          case 'ach-points-500':
-            progress = Math.min(100, Math.round((points / 500) * 100));
-            shouldUnlock = points >= 500;
-            break;
-          case 'ach-diamond-eco':
-            progress = Math.min(100, Math.round((points / 1500) * 100));
-            shouldUnlock = points >= 1500;
+          case 'ach-planet-hero':
+            progress = Math.min(100, Math.round((points / 80) * 100));
+            shouldUnlock = points >= 80;
             break;
           default:
             break;
@@ -474,8 +463,9 @@ export const EcoProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
       if (newlyUnlocked) {
         const u = newlyUnlocked as Achievement;
+        setUnlockedAchievementModal(u);
         fireCelebration(`Achievement Unlocked!`, `You earned the "${u.title}" badge.`);
-        addToast(`Badge Unlocked: ${u.title}`, u.description, 'award');
+        addToast(`Achievement Unlocked: ${u.title}`, u.description, 'award');
       }
 
       return updated;
@@ -732,7 +722,9 @@ export const EcoProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         toasts,
         removeToast,
         celebrationEvent,
-        dismissCelebration
+        dismissCelebration,
+        unlockedAchievementModal,
+        dismissAchievementModal
       }}
     >
       {children}

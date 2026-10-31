@@ -191,7 +191,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ setActiveTab }) =>
     let grandCategoryPoints = 0;
 
     for (const log of loggedActions) {
-      const catKey = log.category;
+      const catKey = (log.category === 'transport' ? 'commute' : log.category) as 'commute' | 'food' | 'energy' | 'waste';
       if (totals[catKey]) {
         totals[catKey].points += log.pointsEarned;
         totals[catKey].count += 1;

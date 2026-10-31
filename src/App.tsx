@@ -9,6 +9,7 @@ import { NavigationTab } from './types';
 import { Navbar } from './components/common/Navbar';
 import { ToastContainer } from './components/common/ToastContainer';
 import { CelebrationModal } from './components/common/CelebrationModal';
+import { AchievementModal } from './components/common/AchievementModal';
 import { LandingPage } from './components/landing/LandingPage';
 import { DashboardPage } from './components/dashboard/DashboardPage';
 import { LogActionPage } from './components/log/LogActionPage';
@@ -40,6 +41,7 @@ function AppContent() {
       {/* Global Notifications & Modals */}
       <ToastContainer />
       <CelebrationModal />
+      <AchievementModal />
 
       {/* Footer */}
       <footer className="mt-auto border-t border-zinc-200/80 bg-white py-8 text-xs text-zinc-500">

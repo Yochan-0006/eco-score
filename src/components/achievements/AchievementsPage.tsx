@@ -10,14 +10,17 @@ import {
   ShieldCheck, 
   Crown, 
   Calendar,
-  Filter
+  Filter,
+  Check,
+  TrendingUp,
+  Target
 } from 'lucide-react';
 import { IconHelper } from '../common/IconHelper';
 
 export const AchievementsPage: React.FC = () => {
-  const { achievements } = useEco();
+  const { achievements, levelInfo, totalPoints, user } = useEco();
 
-  const [filter, setFilter] = useState<'all' | 'unlocked' | 'locked' | 'emerald' | 'gold' | 'silver' | 'bronze'>('all');
+  const [filter, setFilter] = useState<'all' | 'unlocked' | 'locked'>('all');
   const [selectedBadge, setSelectedBadge] = useState<Achievement | null>(null);
 
   const unlockedCount = achievements.filter(a => a.isUnlocked).length;
@@ -27,38 +30,16 @@ export const AchievementsPage: React.FC = () => {
     if (filter === 'all') return true;
     if (filter === 'unlocked') return a.isUnlocked;
     if (filter === 'locked') return !a.isUnlocked;
-    return a.tier === filter;
+    return true;
   });
 
-  const getTierStyles = (tier: Achievement['tier']) => {
-    switch (tier) {
-      case 'emerald':
-        return {
-          badge: 'bg-emerald-100 text-emerald-800 border-emerald-300',
-          ring: 'border-emerald-400/80 shadow-emerald-500/10',
-          iconBg: 'bg-emerald-600 text-white'
-        };
-      case 'gold':
-        return {
-          badge: 'bg-amber-100 text-amber-900 border-amber-300',
-          ring: 'border-amber-400/80 shadow-amber-500/10',
-          iconBg: 'bg-amber-500 text-white'
-        };
-      case 'silver':
-        return {
-          badge: 'bg-slate-100 text-slate-800 border-slate-300',
-          ring: 'border-slate-300',
-          iconBg: 'bg-slate-600 text-white'
-        };
-      case 'bronze':
-      default:
-        return {
-          badge: 'bg-orange-100 text-orange-900 border-orange-200',
-          ring: 'border-orange-300',
-          iconBg: 'bg-orange-700 text-white'
-        };
-    }
-  };
+  // Gamification Tier Milestones
+  const tiers = [
+    { name: 'Getting Started', range: '0 - 29 pts', min: 0, max: 29 },
+    { name: 'Eco Explorer', range: '30 - 59 pts', min: 30, max: 59 },
+    { name: 'Green Champion', range: '60 - 79 pts', min: 60, max: 79 },
+    { name: 'Planet Hero', range: '80 - 100+ pts', min: 80, max: 100 }
+  ];
 
   return (
     <div className="space-y-8 py-4 pb-20">
@@ -67,23 +48,106 @@ export const AchievementsPage: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-zinc-900 tracking-tight">
-            Sustainability Badges & Honors
+            Gamification & Achievements
           </h1>
           <p className="text-xs sm:text-sm text-zinc-500 mt-1">
-            Permanent proof-of-impact credentials earned through consistent climate habits.
+            Level up from Getting Started to Planet Hero by building daily streaks and logging eco actions.
           </p>
         </div>
 
         {/* Master Progress */}
         <div className="p-3.5 rounded-xl bg-white border border-zinc-200/90 shadow-2xs min-w-64">
           <div className="flex justify-between items-center text-xs font-semibold mb-1.5">
-            <span className="text-zinc-600">Badges Unlocked</span>
+            <span className="text-zinc-600">Achievements Unlocked</span>
             <span className="font-mono text-emerald-700 font-bold">{unlockedCount} / {achievements.length} ({completionPercent}%)</span>
           </div>
           <div className="w-full h-2 bg-zinc-100 rounded-full overflow-hidden border border-zinc-200/60">
             <div 
               className="h-full bg-emerald-600 rounded-full transition-all duration-500"
               style={{ width: `${completionPercent}%` }}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Gamification Level Stepper Banner */}
+      <div className="p-6 rounded-3xl bg-gradient-to-br from-zinc-900 via-zinc-900 to-emerald-950 text-white shadow-sm border border-zinc-800 space-y-5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-400 bg-emerald-950/80 border border-emerald-700/60 px-2.5 py-0.5 rounded-md">
+              Level {levelInfo.levelNumber} Status
+            </span>
+            <h2 className="text-xl sm:text-2xl font-extrabold text-white mt-1">
+              {levelInfo.currentLevel}
+            </h2>
+            <p className="text-xs text-zinc-300 mt-0.5">
+              {levelInfo.encouragingMessage}
+            </p>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <div className="px-3.5 py-2 rounded-xl bg-white/10 backdrop-blur-md border border-white/10 text-center">
+              <span className="text-[10px] uppercase font-bold text-zinc-400 block">EcoPoint Total</span>
+              <span className="text-lg font-mono font-bold text-white">{totalPoints} pts</span>
+            </div>
+            <div className="px-3.5 py-2 rounded-xl bg-amber-500/20 backdrop-blur-md border border-amber-400/30 text-center">
+              <span className="text-[10px] uppercase font-bold text-amber-300 block">Daily Streak</span>
+              <span className="text-lg font-mono font-bold text-amber-400 flex items-center justify-center gap-1">
+                <Flame className="w-4 h-4 fill-amber-400" />
+                <span>{user.streakDays}d</span>
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* 4 Levels Roadmap */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 pt-2">
+          {tiers.map((t, idx) => {
+            const isCurrent = levelInfo.currentLevel === t.name;
+            const isPassed = totalPoints > t.max;
+
+            return (
+              <div 
+                key={t.name}
+                className={`p-3.5 rounded-xl border transition-all ${
+                  isCurrent
+                    ? 'bg-emerald-900/60 border-emerald-400 ring-2 ring-emerald-400/30'
+                    : isPassed
+                    ? 'bg-white/10 border-emerald-500/40 text-emerald-100'
+                    : 'bg-zinc-800/40 border-zinc-700/60 text-zinc-400 opacity-60'
+                }`}
+              >
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-[10px] font-mono font-semibold uppercase">
+                    Level {idx + 1}
+                  </span>
+                  {isPassed ? (
+                    <span className="w-4 h-4 rounded-full bg-emerald-500 text-zinc-950 flex items-center justify-center text-[10px] font-bold">
+                      ✓
+                    </span>
+                  ) : isCurrent ? (
+                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+                  ) : (
+                    <Lock className="w-3 h-3 text-zinc-500" />
+                  )}
+                </div>
+                <p className="text-xs font-bold text-white truncate">{t.name}</p>
+                <p className="text-[11px] font-mono text-zinc-400 mt-0.5">{t.range}</p>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Level progress bar */}
+        <div className="pt-2">
+          <div className="flex justify-between items-center text-xs text-zinc-300 mb-1.5 font-mono">
+            <span>Progress to Next Level ({levelInfo.nextMax} pts target)</span>
+            <span className="text-emerald-400 font-bold">{levelInfo.progressPercent}%</span>
+          </div>
+          <div className="w-full h-2.5 bg-zinc-800 rounded-full overflow-hidden border border-zinc-700">
+            <div 
+              className="h-full bg-gradient-to-r from-emerald-500 to-teal-400 rounded-full transition-all duration-700"
+              style={{ width: `${levelInfo.progressPercent}%` }}
             />
           </div>
         </div>
@@ -97,7 +161,7 @@ export const AchievementsPage: React.FC = () => {
             filter === 'all' ? 'bg-white text-zinc-900 shadow-2xs' : 'text-zinc-600 hover:text-zinc-900'
           }`}
         >
-          All Badges ({achievements.length})
+          All Achievements ({achievements.length})
         </button>
         <button
           onClick={() => setFilter('unlocked')}
@@ -113,56 +177,39 @@ export const AchievementsPage: React.FC = () => {
             filter === 'locked' ? 'bg-white text-zinc-900 shadow-2xs' : 'text-zinc-600 hover:text-zinc-900'
           }`}
         >
-          In Progress ({achievements.length - unlockedCount})
-        </button>
-        <button
-          onClick={() => setFilter('emerald')}
-          className={`px-3 py-1.5 font-semibold rounded-lg transition-colors cursor-pointer ${
-            filter === 'emerald' ? 'bg-white text-zinc-900 shadow-2xs' : 'text-zinc-600 hover:text-zinc-900'
-          }`}
-        >
-          Emerald (Legendary)
-        </button>
-        <button
-          onClick={() => setFilter('gold')}
-          className={`px-3 py-1.5 font-semibold rounded-lg transition-colors cursor-pointer ${
-            filter === 'gold' ? 'bg-white text-zinc-900 shadow-2xs' : 'text-zinc-600 hover:text-zinc-900'
-          }`}
-        >
-          Gold
+          Locked ({achievements.length - unlockedCount})
         </button>
       </div>
 
       {/* Badges Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         {filtered.map(badge => {
-          const styles = getTierStyles(badge.tier);
           const isUnlocked = badge.isUnlocked;
 
           return (
             <div
               key={badge.id}
               onClick={() => setSelectedBadge(badge)}
-              className={`rounded-2xl p-5 border transition-all flex flex-col justify-between cursor-pointer group shadow-2xs ${
+              className={`rounded-3xl p-5 border transition-all flex flex-col justify-between cursor-pointer group shadow-2xs ${
                 isUnlocked
-                  ? `bg-white ${styles.ring} hover:shadow-md`
-                  : 'bg-zinc-50/70 border-zinc-200/80 opacity-75 hover:opacity-100 hover:bg-white'
+                  ? 'bg-white border-zinc-200/90 hover:border-emerald-300 hover:shadow-md'
+                  : 'bg-zinc-50/70 border-zinc-200/60 opacity-60 grayscale hover:grayscale-0 hover:opacity-85'
               }`}
             >
               <div>
-                {/* Top tier pill & status */}
-                <div className="flex items-center justify-between mb-3">
-                  <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border ${styles.badge}`}>
-                    {badge.tier}
+                {/* Status indicator */}
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">
+                    Badge
                   </span>
 
                   {isUnlocked ? (
-                    <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">
+                    <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
                       <CheckCircle2 className="w-3 h-3" />
                       <span>Unlocked</span>
                     </span>
                   ) : (
-                    <span className="inline-flex items-center gap-1 text-[11px] text-zinc-400">
+                    <span className="inline-flex items-center gap-1 text-[11px] font-medium text-zinc-400 bg-zinc-200/60 px-2 py-0.5 rounded-full">
                       <Lock className="w-3 h-3" />
                       <span>Locked</span>
                     </span>
@@ -170,39 +217,43 @@ export const AchievementsPage: React.FC = () => {
                 </div>
 
                 {/* Badge Icon Emblem */}
-                <div className="my-3 flex items-center justify-center">
-                  <div className={`w-16 h-16 rounded-2xl flex items-center justify-center shadow-md transition-transform group-hover:scale-105 ${
-                    isUnlocked ? styles.iconBg : 'bg-zinc-200 text-zinc-500'
+                <div className="my-4 flex items-center justify-center">
+                  <div className={`w-18 h-18 rounded-2xl flex items-center justify-center shadow-md transition-transform group-hover:scale-105 ${
+                    isUnlocked 
+                      ? 'bg-gradient-to-tr from-emerald-600 to-teal-500 text-white shadow-emerald-500/25' 
+                      : 'bg-zinc-200 text-zinc-400 shadow-none'
                   }`}>
-                    <IconHelper name={badge.icon} className="w-8 h-8" size={32} />
+                    <IconHelper name={badge.icon} className="w-9 h-9" size={36} />
                   </div>
                 </div>
 
                 <div className="text-center mt-2 space-y-1">
-                  <h3 className="text-sm font-bold text-zinc-900 group-hover:text-emerald-700 transition-colors">
+                  <h3 className={`text-base font-bold transition-colors ${
+                    isUnlocked ? 'text-zinc-900 group-hover:text-emerald-700' : 'text-zinc-600'
+                  }`}>
                     {badge.title}
                   </h3>
-                  <p className="text-xs text-zinc-500 line-clamp-2">
+                  <p className="text-xs text-zinc-500 line-clamp-2 leading-relaxed">
                     {badge.description}
                   </p>
                 </div>
               </div>
 
-              {/* Bottom Condition or Unlock Date */}
-              <div className="pt-4 mt-3 border-t border-zinc-100/90">
+              {/* Bottom Condition or Unlock Status */}
+              <div className="pt-4 mt-3 border-t border-zinc-100">
                 {isUnlocked ? (
                   <p className="text-[11px] text-zinc-400 text-center flex items-center justify-center gap-1">
-                    <Calendar className="w-3 h-3" />
+                    <Calendar className="w-3 h-3 text-emerald-600" />
                     <span>
                       {badge.unlockedAt
-                        ? `Unlocked ${new Date(badge.unlockedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}`
-                        : 'Unlocked'}
+                        ? `Earned ${new Date(badge.unlockedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}`
+                        : 'Unlocked & Verified'}
                     </span>
                   </p>
                 ) : (
                   <div className="space-y-1.5">
                     <div className="flex justify-between items-center text-[11px] text-zinc-500">
-                      <span>Requirement: {badge.conditionText}</span>
+                      <span className="truncate pr-1">Target: {badge.conditionText}</span>
                       <span className="font-mono font-bold">{badge.progress}%</span>
                     </div>
                     <div className="w-full h-1.5 bg-zinc-200 rounded-full overflow-hidden">
@@ -219,10 +270,10 @@ export const AchievementsPage: React.FC = () => {
         })}
       </div>
 
-      {/* Badge Detail Modal */}
+      {/* Selected Badge Detail Modal */}
       {selectedBadge && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-900/50 backdrop-blur-xs animate-in fade-in">
-          <div className="relative w-full max-w-sm bg-white rounded-2xl border border-zinc-200/90 shadow-2xl p-6 text-center space-y-4">
+          <div className="relative w-full max-w-sm bg-white rounded-3xl border border-zinc-200/90 shadow-2xl p-6 text-center space-y-4">
             <button
               onClick={() => setSelectedBadge(null)}
               className="absolute top-4 right-4 p-1.5 text-zinc-400 hover:text-zinc-600 rounded-lg hover:bg-zinc-100"
@@ -230,32 +281,44 @@ export const AchievementsPage: React.FC = () => {
               ✕
             </button>
 
-            <div className="mx-auto w-16 h-16 rounded-2xl bg-emerald-600 text-white flex items-center justify-center shadow-lg shadow-emerald-500/20">
+            <div className={`mx-auto w-16 h-16 rounded-2xl flex items-center justify-center shadow-lg ${
+              selectedBadge.isUnlocked ? 'bg-emerald-600 text-white shadow-emerald-500/20' : 'bg-zinc-200 text-zinc-500'
+            }`}>
               <IconHelper name={selectedBadge.icon} className="w-8 h-8" />
             </div>
 
             <div>
-              <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-800 bg-emerald-50 px-2.5 py-0.5 rounded">
-                {selectedBadge.tier} Tier Badge
+              <span className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded ${
+                selectedBadge.isUnlocked ? 'text-emerald-800 bg-emerald-50' : 'text-zinc-500 bg-zinc-100'
+              }`}>
+                {selectedBadge.isUnlocked ? 'Unlocked Badge' : 'Locked Badge'}
               </span>
-              <h3 className="text-lg font-bold text-zinc-900 mt-2">{selectedBadge.title}</h3>
+              <h3 className="text-xl font-bold text-zinc-900 mt-2">{selectedBadge.title}</h3>
               <p className="text-xs text-zinc-600 mt-1">{selectedBadge.description}</p>
             </div>
 
-            <div className="p-3 bg-zinc-50 rounded-xl border border-zinc-100 text-xs text-left space-y-1">
+            <div className="p-3 bg-zinc-50 rounded-xl border border-zinc-100 text-xs text-left space-y-1.5">
               <p><strong className="text-zinc-800">Criteria:</strong> {selectedBadge.conditionText}</p>
-              <p><strong className="text-zinc-800">Status:</strong> {selectedBadge.isUnlocked ? 'Unlocked & Verified ✓' : `${selectedBadge.progress}% Complete`}</p>
+              <p>
+                <strong className="text-zinc-800">Status:</strong>{' '}
+                {selectedBadge.isUnlocked ? (
+                  <span className="text-emerald-700 font-semibold">Unlocked & Verified ✓</span>
+                ) : (
+                  <span className="text-zinc-500">{selectedBadge.progress}% Complete</span>
+                )}
+              </p>
             </div>
 
             <button
               onClick={() => setSelectedBadge(null)}
-              className="w-full py-2 bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-semibold rounded-xl cursor-pointer"
+              className="w-full py-2.5 bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-semibold rounded-xl cursor-pointer"
             >
               Close
             </button>
           </div>
         </div>
       )}
+
     </div>
   );
 };
