@@ -118,6 +118,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ setActiveTab }) =>
   ];
 
   const [quickWinIndex, setQuickWinIndex] = useState(0);
+  const [quickWinLogged, setQuickWinLogged] = useState(false);
   const currentQuickWin = quickWinList[quickWinIndex % quickWinList.length];
 
   // Dynamic greeting based on time of day
@@ -215,11 +216,15 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ setActiveTab }) =>
     });
   }, [loggedActions]);
 
-  // Handle Quick Win Click
+  // Handle Quick Win Click with feedback & duplicate debounce
   const handleLogQuickWin = () => {
+    if (quickWinLogged) return;
+    setQuickWinLogged(true);
     logAction(currentQuickWin.actionId, currentQuickWin.qty, `Completed quick win recommendation`);
-    // Advance to next quick win for variety
-    setQuickWinIndex(prev => prev + 1);
+    setTimeout(() => {
+      setQuickWinLogged(false);
+      setQuickWinIndex(prev => prev + 1);
+    }, 1200);
   };
 
   // Circular gauge math for EcoScore card
@@ -382,7 +387,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ setActiveTab }) =>
             </div>
           </div>
           <div className="mt-3 flex items-baseline gap-2">
-            <span className="text-3xl sm:text-4xl font-extrabold font-mono text-zinc-900">
+            <span className="text-3xl sm:text-4xl font-extrabold font-mono tabular-nums text-zinc-900">
               {weeklyEcoPoints}
             </span>
             <span className="text-xs text-emerald-700 font-semibold">pts / 7 days</span>
@@ -403,7 +408,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ setActiveTab }) =>
             </div>
           </div>
           <div className="mt-3 flex items-baseline gap-2">
-            <span className="text-3xl sm:text-4xl font-extrabold font-mono text-zinc-900">
+            <span className="text-3xl sm:text-4xl font-extrabold font-mono tabular-nums text-zinc-900">
               {totalActionsCount}
             </span>
             <span className="text-xs text-zinc-500 font-medium">habits logged</span>
@@ -424,7 +429,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ setActiveTab }) =>
             </div>
           </div>
           <div className="mt-3 flex items-baseline gap-2">
-            <span className="text-3xl sm:text-4xl font-extrabold font-mono text-zinc-900">
+            <span className="text-3xl sm:text-4xl font-extrabold font-mono tabular-nums text-zinc-900">
               {user.streakDays}
             </span>
             <span className="text-xs text-amber-600 font-bold">Days in a Row</span>
@@ -605,17 +610,15 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ setActiveTab }) =>
         <div className="lg:col-span-5 rounded-2xl bg-gradient-to-br from-white via-emerald-50/40 to-white border border-emerald-200/80 p-6 shadow-2xs space-y-4 relative overflow-hidden">
           
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping" />
-              <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-800 bg-emerald-100/70 border border-emerald-300/60 px-2 py-0.5 rounded-md">
-                Quick Win Recommendation
-              </span>
-            </div>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-800 bg-emerald-100/70 border border-emerald-300/60 px-2.5 py-0.5 rounded-md">
+              Quick Win Recommendation
+            </span>
 
             <button
               onClick={() => setQuickWinIndex(prev => prev + 1)}
-              className="text-xs text-zinc-500 hover:text-zinc-800 inline-flex items-center gap-1 cursor-pointer"
+              className="text-xs text-zinc-500 hover:text-zinc-800 inline-flex items-center gap-1 cursor-pointer focus-visible:outline-2 focus-visible:outline-emerald-600 rounded"
               title="Shuffle to another quick win"
+              aria-label="Show next quick win recommendation"
             >
               <RefreshCw className="w-3.5 h-3.5" />
               <span>Next</span>
@@ -631,7 +634,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ setActiveTab }) =>
                 <h3 className="text-base font-bold text-zinc-900 leading-snug">
                   {currentQuickWin.title}
                 </h3>
-                <span className="inline-block mt-1 text-xs font-mono font-bold text-emerald-800 bg-emerald-100/80 px-2 py-0.5 rounded-md border border-emerald-200">
+                <span className="inline-block mt-1 text-xs font-mono font-bold tabular-nums text-emerald-800 bg-emerald-100/80 px-2 py-0.5 rounded-md border border-emerald-200">
                   +{currentQuickWin.pts} EcoPoints Reward
                 </span>
               </div>
@@ -646,10 +649,19 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ setActiveTab }) =>
           <div className="pt-2">
             <button
               onClick={handleLogQuickWin}
-              className="w-full inline-flex items-center justify-center gap-2 py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-xs transition-all cursor-pointer"
+              disabled={quickWinLogged}
+              className={`w-full inline-flex items-center justify-center gap-2 py-2.5 px-4 text-xs font-bold rounded-xl shadow-xs transition-all cursor-pointer focus-visible:outline-2 focus-visible:outline-emerald-600 ${
+                quickWinLogged
+                  ? 'bg-emerald-700 text-white'
+                  : 'bg-emerald-600 hover:bg-emerald-700 text-white'
+              }`}
             >
               <Check className="w-4 h-4" />
-              <span>Log This Quick Win (+{currentQuickWin.pts} pts)</span>
+              <span>
+                {quickWinLogged 
+                  ? `Logged ✓ (+${currentQuickWin.pts} EcoPoints!)` 
+                  : `Log This Quick Win (+${currentQuickWin.pts} pts)`}
+              </span>
             </button>
           </div>
 
@@ -679,9 +691,23 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ setActiveTab }) =>
         </div>
 
         {loggedActions.length === 0 ? (
-          <div className="p-8 text-center rounded-xl bg-zinc-50 border border-zinc-200/60 space-y-2">
-            <p className="text-sm font-semibold text-zinc-800">No actions recorded yet</p>
-            <p className="text-xs text-zinc-500">Tap "Log Eco Action" above to add your first sustainable choice.</p>
+          <div className="py-12 px-6 text-center rounded-2xl bg-zinc-50 border border-zinc-200/70 space-y-3">
+            <div className="w-12 h-12 mx-auto rounded-2xl bg-emerald-50 text-emerald-700 flex items-center justify-center">
+              <CheckCircle2 className="w-6 h-6" />
+            </div>
+            <div>
+              <p className="text-sm font-bold text-zinc-900">No actions recorded yet</p>
+              <p className="text-xs text-zinc-500 mt-1 max-w-sm mx-auto">
+                Every sustainable habit you log earns EcoPoints, builds your streak, and quantifies your carbon avoidance.
+              </p>
+            </div>
+            <button
+              onClick={() => setActiveTab('log')}
+              className="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-xl shadow-2xs transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-emerald-600"
+            >
+              <PlusCircle className="w-3.5 h-3.5" />
+              <span>Log Your First Habit</span>
+            </button>
           </div>
         ) : (
           <div className="divide-y divide-zinc-100">
@@ -740,14 +766,14 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ setActiveTab }) =>
                   </div>
 
                   <div className="flex items-center gap-2.5 shrink-0">
-                    <span className="text-xs font-mono font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200/60">
+                    <span className="text-xs font-mono font-bold tabular-nums text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200/60">
                       +{action.pointsEarned} pts
                     </span>
                     <button
                       onClick={() => deleteLog(action.id)}
-                      className="opacity-0 group-hover:opacity-100 p-1 text-zinc-400 hover:text-rose-600 rounded transition-all cursor-pointer"
-                      title="Delete action"
-                      aria-label="Delete action"
+                      className="opacity-0 group-hover:opacity-100 focus-visible:opacity-100 p-1.5 text-zinc-400 hover:text-rose-600 rounded-lg hover:bg-zinc-100 transition-all cursor-pointer focus-visible:outline-2 focus-visible:outline-rose-500"
+                      title="Remove entry"
+                      aria-label={`Remove ${action.title} from activity log`}
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>

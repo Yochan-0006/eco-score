@@ -17,14 +17,8 @@ import {
   INITIAL_LOGGED_ACTIONS, 
   INITIAL_LEADERBOARD 
 } from '../data/initialData';
-
-export interface ToastMessage {
-  id: string;
-  type: 'success' | 'info' | 'award';
-  title: string;
-  message: string;
-  points?: number;
-}
+import { storage } from '../utils/storage';
+import { ToastMessage } from '../types';
 
 interface EcoContextType {
   user: UserProfile;
@@ -100,50 +94,15 @@ const STORAGE_KEYS = {
 
 export const EcoProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   // State Initialization from localStorage or fallbacks
-  const [user, setUser] = useState<UserProfile>(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEYS.USER);
-      return saved ? JSON.parse(saved) : INITIAL_USER_PROFILE;
-    } catch {
-      return INITIAL_USER_PROFILE;
-    }
-  });
+  const [user, setUser] = useState<UserProfile>(() => storage.get(STORAGE_KEYS.USER, INITIAL_USER_PROFILE));
 
-  const [loggedActions, setLoggedActions] = useState<LoggedAction[]>(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEYS.LOGS);
-      return saved ? JSON.parse(saved) : INITIAL_LOGGED_ACTIONS;
-    } catch {
-      return INITIAL_LOGGED_ACTIONS;
-    }
-  });
+  const [loggedActions, setLoggedActions] = useState<LoggedAction[]>(() => storage.get(STORAGE_KEYS.LOGS, INITIAL_LOGGED_ACTIONS));
 
-  const [challenges, setChallenges] = useState<Challenge[]>(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEYS.CHALLENGES);
-      return saved ? JSON.parse(saved) : INITIAL_CHALLENGES;
-    } catch {
-      return INITIAL_CHALLENGES;
-    }
-  });
+  const [challenges, setChallenges] = useState<Challenge[]>(() => storage.get(STORAGE_KEYS.CHALLENGES, INITIAL_CHALLENGES));
 
-  const [achievements, setAchievements] = useState<Achievement[]>(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEYS.ACHIEVEMENTS);
-      return saved ? JSON.parse(saved) : INITIAL_ACHIEVEMENTS;
-    } catch {
-      return INITIAL_ACHIEVEMENTS;
-    }
-  });
+  const [achievements, setAchievements] = useState<Achievement[]>(() => storage.get(STORAGE_KEYS.ACHIEVEMENTS, INITIAL_ACHIEVEMENTS));
 
-  const [customActions, setCustomActions] = useState<EcoActionDefinition[]>(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEYS.CUSTOM_ACTIONS);
-      return saved ? JSON.parse(saved) : [];
-    } catch {
-      return [];
-    }
-  });
+  const [customActions, setCustomActions] = useState<EcoActionDefinition[]>(() => storage.get(STORAGE_KEYS.CUSTOM_ACTIONS, []));
 
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const [celebrationEvent, setCelebrationEvent] = useState<{
@@ -161,43 +120,23 @@ export const EcoProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // Sync to localStorage
   useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(user));
-    } catch (e) {
-      console.error('Failed to save user:', e);
-    }
+    storage.set(STORAGE_KEYS.USER, user);
   }, [user]);
 
   useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEYS.LOGS, JSON.stringify(loggedActions));
-    } catch (e) {
-      console.error('Failed to save logs:', e);
-    }
+    storage.set(STORAGE_KEYS.LOGS, loggedActions);
   }, [loggedActions]);
 
   useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEYS.CHALLENGES, JSON.stringify(challenges));
-    } catch (e) {
-      console.error('Failed to save challenges:', e);
-    }
+    storage.set(STORAGE_KEYS.CHALLENGES, challenges);
   }, [challenges]);
 
   useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEYS.ACHIEVEMENTS, JSON.stringify(achievements));
-    } catch (e) {
-      console.error('Failed to save achievements:', e);
-    }
+    storage.set(STORAGE_KEYS.ACHIEVEMENTS, achievements);
   }, [achievements]);
 
   useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEYS.CUSTOM_ACTIONS, JSON.stringify(customActions));
-    } catch (e) {
-      console.error('Failed to save custom actions:', e);
-    }
+    storage.set(STORAGE_KEYS.CUSTOM_ACTIONS, customActions);
   }, [customActions]);
 
   // Combined catalogue

@@ -34,7 +34,20 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) =
   const [avatar, setAvatar] = useState(user.avatar);
   const [importJsonText, setImportJsonText] = useState('');
   const [showImportBox, setShowImportBox] = useState(false);
+  const [importError, setImportError] = useState<string | null>(null);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
+
+  // Close on Escape key
+  React.useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 
@@ -65,32 +78,39 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) =
 
   const handleImportSubmit = () => {
     if (!importJsonText.trim()) return;
+    setImportError(null);
     const ok = importDataJson(importJsonText.trim());
     if (ok) {
       setShowImportBox(false);
       setImportJsonText('');
       onClose();
     } else {
-      alert('Invalid EcoScore JSON file format. Please check the text.');
+      setImportError('Invalid backup format. Please ensure valid EcoScore JSON data.');
     }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-900/50 backdrop-blur-xs animate-in fade-in duration-150">
+    <div 
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-900/50 backdrop-blur-xs animate-in fade-in duration-150"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
       <div 
-        className="relative w-full max-w-lg max-h-[90vh] overflow-y-auto bg-white rounded-2xl border border-zinc-200/90 shadow-2xl p-6 sm:p-7"
+        className="relative w-full max-w-lg max-h-[90vh] overflow-y-auto bg-white rounded-2xl border border-zinc-200/90 shadow-2xl p-6 sm:p-7 focus-visible:outline-hidden"
         role="dialog"
         aria-modal="true"
+        aria-labelledby="profile-modal-title"
       >
         <div className="flex items-center justify-between pb-4 border-b border-zinc-100">
           <div>
-            <h2 className="text-lg font-bold text-zinc-900 tracking-tight">EcoProfile & Preferences</h2>
+            <h2 id="profile-modal-title" className="text-lg font-bold text-zinc-900 tracking-tight">EcoProfile & Preferences</h2>
             <p className="text-xs text-zinc-500 mt-0.5">Manage your climate persona, goals, and offline storage</p>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 text-zinc-400 hover:text-zinc-600 rounded-lg hover:bg-zinc-100 transition-colors"
-            aria-label="Close"
+            className="p-1.5 text-zinc-400 hover:text-zinc-600 rounded-lg hover:bg-zinc-100 transition-colors focus-visible:outline-2 focus-visible:outline-emerald-600 cursor-pointer"
+            aria-label="Close profile modal"
           >
             <X className="w-5 h-5" />
           </button>
@@ -222,22 +242,33 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) =
                 <textarea
                   rows={3}
                   value={importJsonText}
-                  onChange={e => setImportJsonText(e.target.value)}
+                  onChange={e => {
+                    setImportJsonText(e.target.value);
+                    if (importError) setImportError(null);
+                  }}
                   placeholder='{"user": {...}, "loggedActions": [...]}'
-                  className="w-full p-2 bg-white font-mono text-xs border border-zinc-200 rounded-md focus:outline-emerald-600"
+                  className="w-full p-2 bg-white font-mono text-xs border border-zinc-200 rounded-md focus:outline-emerald-600 focus:ring-1 focus:ring-emerald-600"
                 />
+                {importError && (
+                  <p className="mt-1 text-xs text-rose-600 font-medium">
+                    {importError}
+                  </p>
+                )}
                 <div className="mt-2 flex justify-end gap-2">
                   <button
                     type="button"
-                    onClick={() => setShowImportBox(false)}
-                    className="px-2.5 py-1 text-zinc-600 hover:text-zinc-800"
+                    onClick={() => {
+                      setShowImportBox(false);
+                      setImportError(null);
+                    }}
+                    className="px-2.5 py-1 text-zinc-600 hover:text-zinc-800 cursor-pointer"
                   >
                     Cancel
                   </button>
                   <button
                     type="button"
                     onClick={handleImportSubmit}
-                    className="px-3 py-1 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 font-medium"
+                    className="px-3 py-1 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 font-medium cursor-pointer"
                   >
                     Load Backup
                   </button>

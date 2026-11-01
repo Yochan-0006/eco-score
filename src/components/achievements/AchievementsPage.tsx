@@ -23,6 +23,18 @@ export const AchievementsPage: React.FC = () => {
   const [filter, setFilter] = useState<'all' | 'unlocked' | 'locked'>('all');
   const [selectedBadge, setSelectedBadge] = useState<Achievement | null>(null);
 
+  // Close badge detail modal on Escape key
+  React.useEffect(() => {
+    if (!selectedBadge) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setSelectedBadge(null);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedBadge]);
+
   const unlockedCount = achievements.filter(a => a.isUnlocked).length;
   const completionPercent = Math.round((unlockedCount / achievements.length) * 100);
 
@@ -59,7 +71,7 @@ export const AchievementsPage: React.FC = () => {
         <div className="p-3.5 rounded-xl bg-white border border-zinc-200/90 shadow-2xs min-w-64">
           <div className="flex justify-between items-center text-xs font-semibold mb-1.5">
             <span className="text-zinc-600">Achievements Unlocked</span>
-            <span className="font-mono text-emerald-700 font-bold">{unlockedCount} / {achievements.length} ({completionPercent}%)</span>
+            <span className="font-mono tabular-nums text-emerald-700 font-bold">{unlockedCount} / {achievements.length} ({completionPercent}%)</span>
           </div>
           <div className="w-full h-2 bg-zinc-100 rounded-full overflow-hidden border border-zinc-200/60">
             <div 
@@ -88,11 +100,11 @@ export const AchievementsPage: React.FC = () => {
           <div className="flex items-center gap-3">
             <div className="px-3.5 py-2 rounded-xl bg-white/10 backdrop-blur-md border border-white/10 text-center">
               <span className="text-[10px] uppercase font-bold text-zinc-400 block">EcoPoint Total</span>
-              <span className="text-lg font-mono font-bold text-white">{totalPoints} pts</span>
+              <span className="text-lg font-mono tabular-nums font-bold text-white">{totalPoints} pts</span>
             </div>
             <div className="px-3.5 py-2 rounded-xl bg-amber-500/20 backdrop-blur-md border border-amber-400/30 text-center">
               <span className="text-[10px] uppercase font-bold text-amber-300 block">Daily Streak</span>
-              <span className="text-lg font-mono font-bold text-amber-400 flex items-center justify-center gap-1">
+              <span className="text-lg font-mono tabular-nums font-bold text-amber-400 flex items-center justify-center gap-1">
                 <Flame className="w-4 h-4 fill-amber-400" />
                 <span>{user.streakDays}d</span>
               </span>
@@ -126,13 +138,15 @@ export const AchievementsPage: React.FC = () => {
                       ✓
                     </span>
                   ) : isCurrent ? (
-                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+                    <span className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-400">
+                      Active
+                    </span>
                   ) : (
                     <Lock className="w-3 h-3 text-zinc-500" />
                   )}
                 </div>
                 <p className="text-xs font-bold text-white truncate">{t.name}</p>
-                <p className="text-[11px] font-mono text-zinc-400 mt-0.5">{t.range}</p>
+                <p className="text-[11px] font-mono tabular-nums text-zinc-400 mt-0.5">{t.range}</p>
               </div>
             );
           })}
@@ -270,13 +284,39 @@ export const AchievementsPage: React.FC = () => {
         })}
       </div>
 
+      {filtered.length === 0 && (
+        <div className="py-12 px-6 text-center rounded-2xl bg-white border border-zinc-200/80 space-y-3 shadow-2xs">
+          <p className="text-sm font-bold text-zinc-800">No {filter} badges found</p>
+          <p className="text-xs text-zinc-500">
+            {filter === 'unlocked' ? 'Log your first daily action to unlock the First Step achievement!' : 'You have unlocked all badges! Incredible work.'}
+          </p>
+          <button
+            onClick={() => setFilter('all')}
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold rounded-lg bg-zinc-100 hover:bg-zinc-200 text-zinc-800 transition-colors cursor-pointer"
+          >
+            Show All Badges
+          </button>
+        </div>
+      )}
+
       {/* Selected Badge Detail Modal */}
       {selectedBadge && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-900/50 backdrop-blur-xs animate-in fade-in">
-          <div className="relative w-full max-w-sm bg-white rounded-3xl border border-zinc-200/90 shadow-2xl p-6 text-center space-y-4">
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-900/50 backdrop-blur-xs animate-in fade-in"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setSelectedBadge(null);
+          }}
+        >
+          <div 
+            className="relative w-full max-w-sm bg-white rounded-3xl border border-zinc-200/90 shadow-2xl p-6 text-center space-y-4"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="badge-detail-title"
+          >
             <button
               onClick={() => setSelectedBadge(null)}
-              className="absolute top-4 right-4 p-1.5 text-zinc-400 hover:text-zinc-600 rounded-lg hover:bg-zinc-100"
+              className="absolute top-4 right-4 p-1.5 text-zinc-400 hover:text-zinc-600 rounded-lg hover:bg-zinc-100 focus-visible:outline-2 focus-visible:outline-emerald-600 cursor-pointer"
+              aria-label="Close badge details"
             >
               ✕
             </button>
@@ -293,7 +333,7 @@ export const AchievementsPage: React.FC = () => {
               }`}>
                 {selectedBadge.isUnlocked ? 'Unlocked Badge' : 'Locked Badge'}
               </span>
-              <h3 className="text-xl font-bold text-zinc-900 mt-2">{selectedBadge.title}</h3>
+              <h3 id="badge-detail-title" className="text-xl font-bold text-zinc-900 mt-2">{selectedBadge.title}</h3>
               <p className="text-xs text-zinc-600 mt-1">{selectedBadge.description}</p>
             </div>
 
@@ -304,14 +344,14 @@ export const AchievementsPage: React.FC = () => {
                 {selectedBadge.isUnlocked ? (
                   <span className="text-emerald-700 font-semibold">Unlocked & Verified ✓</span>
                 ) : (
-                  <span className="text-zinc-500">{selectedBadge.progress}% Complete</span>
+                  <span className="text-zinc-500 font-mono tabular-nums">{selectedBadge.progress}% Complete</span>
                 )}
               </p>
             </div>
 
             <button
               onClick={() => setSelectedBadge(null)}
-              className="w-full py-2.5 bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-semibold rounded-xl cursor-pointer"
+              className="w-full py-2.5 bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-semibold rounded-xl cursor-pointer focus-visible:outline-2 focus-visible:outline-emerald-600"
             >
               Close
             </button>

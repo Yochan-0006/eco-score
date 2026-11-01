@@ -250,6 +250,20 @@ export const LogActionPage: React.FC<LogActionPageProps> = ({ setActiveTab }) =>
     actionTitle: string;
   } | null>(null);
 
+  const [loggingActionId, setLoggingActionId] = useState<string | null>(null);
+
+  // Close modal on Escape key
+  React.useEffect(() => {
+    if (!successModal?.isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setSuccessModal(null);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [successModal]);
+
   // Stepper helper
   const getQty = (actionId: string) => quantities[actionId] ?? 1;
   const updateQty = (actionId: string, delta: number) => {
@@ -259,8 +273,11 @@ export const LogActionPage: React.FC<LogActionPageProps> = ({ setActiveTab }) =>
     }));
   };
 
-  // Select action and execute logging flow
+  // Select action and execute logging flow with duplicate debounce
   const handleSelectAction = (action: ActionItem) => {
+    if (loggingActionId === action.id) return;
+    setLoggingActionId(action.id);
+
     const qty = getQty(action.id);
     const result = logAction(action.id, qty);
 
@@ -288,6 +305,10 @@ export const LogActionPage: React.FC<LogActionPageProps> = ({ setActiveTab }) =>
       newScore,
       actionTitle: action.title
     });
+
+    setTimeout(() => {
+      setLoggingActionId(null);
+    }, 600);
   };
 
   // Filter categories and actions
@@ -391,26 +412,37 @@ export const LogActionPage: React.FC<LogActionPageProps> = ({ setActiveTab }) =>
 
         {/* Search */}
         <div className="relative w-full md:w-64">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 pointer-events-none" />
           <input
             type="text"
             placeholder="Search action..."
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-3 py-1.5 bg-white rounded-lg border border-zinc-200 text-xs text-zinc-900 focus:outline-emerald-600 shadow-2xs"
+            className="w-full pl-9 pr-8 py-2 bg-white rounded-xl border border-zinc-200 text-xs text-zinc-900 focus:outline-emerald-600 focus:ring-1 focus:ring-emerald-600 shadow-2xs"
+            aria-label="Search actions"
           />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery('')}
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 p-0.5 text-zinc-400 hover:text-zinc-600 rounded-md cursor-pointer"
+              aria-label="Clear search"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          )}
         </div>
       </div>
 
       {/* 4 Categorized Sections */}
       {totalVisibleActions === 0 ? (
-        <div className="p-12 text-center rounded-2xl bg-white border border-zinc-200/80 space-y-3">
+        <div className="p-12 text-center rounded-2xl bg-white border border-zinc-200/80 space-y-3 shadow-2xs">
           <p className="text-sm font-bold text-zinc-800">No actions matched "{searchQuery}"</p>
+          <p className="text-xs text-zinc-500">Try searching for walking, vegetarian meal, recycling, or lights.</p>
           <button
             onClick={() => { setSearchQuery(''); setActiveCategoryTab('all'); }}
-            className="px-3.5 py-1.5 text-xs font-semibold rounded-lg bg-zinc-100 text-zinc-700 hover:bg-zinc-200"
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold rounded-lg bg-zinc-100 hover:bg-zinc-200 text-zinc-800 transition-colors cursor-pointer"
           >
-            Reset Filters
+            <span>Reset Filters</span>
           </button>
         </div>
       ) : (
@@ -428,7 +460,7 @@ export const LogActionPage: React.FC<LogActionPageProps> = ({ setActiveTab }) =>
                     {category.title}
                   </h2>
                 </div>
-                <span className="text-xs font-mono text-zinc-400 font-medium">
+                <span className="text-xs font-mono tabular-nums text-zinc-500 font-medium">
                   {category.actions.length} {category.actions.length === 1 ? 'action' : 'actions'}
                 </span>
               </div>
@@ -438,6 +470,7 @@ export const LogActionPage: React.FC<LogActionPageProps> = ({ setActiveTab }) =>
                 {category.actions.map(action => {
                   const qty = getQty(action.id);
                   const totalActionPoints = action.points * qty;
+                  const isCurrentLogging = loggingActionId === action.id;
 
                   return (
                     <div
@@ -455,13 +488,13 @@ export const LogActionPage: React.FC<LogActionPageProps> = ({ setActiveTab }) =>
                               <h3 className="text-sm font-bold text-zinc-900 leading-snug">
                                 {action.title}
                               </h3>
-                              <span className="text-[11px] text-zinc-400 uppercase font-semibold">
+                              <span className="text-[11px] text-zinc-500 uppercase font-semibold">
                                 {category.title}
                               </span>
                             </div>
                           </div>
 
-                          <span className="text-xs font-mono font-bold text-emerald-800 bg-emerald-50 border border-emerald-200/80 px-2.5 py-1 rounded-lg shrink-0">
+                          <span className="text-xs font-mono font-bold tabular-nums text-emerald-800 bg-emerald-50 border border-emerald-200/80 px-2.5 py-1 rounded-lg shrink-0">
                             +{action.points} pts
                           </span>
                         </div>
@@ -477,26 +510,26 @@ export const LogActionPage: React.FC<LogActionPageProps> = ({ setActiveTab }) =>
                         
                         {/* Optional Quantity Adjuster */}
                         <div className="flex items-center justify-between text-xs">
-                          <span className="text-zinc-500 font-medium">Quantity</span>
+                          <span className="text-zinc-600 font-medium">Quantity</span>
                           <div className="flex items-center gap-2">
                             <button
                               type="button"
                               onClick={() => updateQty(action.id, -1)}
-                              className="w-6 h-6 rounded-md border border-zinc-200 bg-zinc-50 hover:bg-zinc-100 flex items-center justify-center text-zinc-600 cursor-pointer"
-                              aria-label="Decrease quantity"
+                              className="w-7 h-7 rounded-lg border border-zinc-200 bg-zinc-50 hover:bg-zinc-100 flex items-center justify-center text-zinc-700 cursor-pointer focus-visible:outline-2 focus-visible:outline-emerald-600"
+                              aria-label={`Decrease ${action.title} quantity`}
                             >
-                              <Minus className="w-3 h-3" />
+                              <Minus className="w-3.5 h-3.5" />
                             </button>
-                            <span className="font-mono font-bold text-zinc-800 min-w-8 text-center">
+                            <span className="font-mono font-bold tabular-nums text-zinc-900 min-w-10 text-center">
                               {qty} {action.unit}
                             </span>
                             <button
                               type="button"
                               onClick={() => updateQty(action.id, 1)}
-                              className="w-6 h-6 rounded-md border border-zinc-200 bg-zinc-50 hover:bg-zinc-100 flex items-center justify-center text-zinc-600 cursor-pointer"
-                              aria-label="Increase quantity"
+                              className="w-7 h-7 rounded-lg border border-zinc-200 bg-zinc-50 hover:bg-zinc-100 flex items-center justify-center text-zinc-700 cursor-pointer focus-visible:outline-2 focus-visible:outline-emerald-600"
+                              aria-label={`Increase ${action.title} quantity`}
                             >
-                              <Plus className="w-3 h-3" />
+                              <Plus className="w-3.5 h-3.5" />
                             </button>
                           </div>
                         </div>
@@ -504,10 +537,13 @@ export const LogActionPage: React.FC<LogActionPageProps> = ({ setActiveTab }) =>
                         {/* Select Action Button */}
                         <button
                           onClick={() => handleSelectAction(action)}
-                          className="w-full inline-flex items-center justify-center gap-2 py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-xs transition-all cursor-pointer"
+                          disabled={isCurrentLogging}
+                          className="w-full inline-flex items-center justify-center gap-2 py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] disabled:opacity-75 disabled:cursor-wait text-white text-xs font-bold rounded-xl shadow-xs transition-all cursor-pointer focus-visible:outline-2 focus-visible:outline-emerald-600"
                         >
                           <Check className="w-4 h-4" />
-                          <span>Select Action (+{totalActionPoints} pts)</span>
+                          <span>
+                            {isCurrentLogging ? 'Logging Choice...' : `Select Action (+${totalActionPoints} pts)`}
+                          </span>
                         </button>
                       </div>
                     </div>
@@ -521,11 +557,17 @@ export const LogActionPage: React.FC<LogActionPageProps> = ({ setActiveTab }) =>
 
       {/* 8. POLISHED SUCCESS MODAL */}
       {successModal && successModal.isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-900/50 backdrop-blur-xs animate-in fade-in duration-200">
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-900/50 backdrop-blur-xs animate-in fade-in duration-200"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setSuccessModal(null);
+          }}
+        >
           <div 
             className="relative w-full max-w-md bg-white rounded-3xl p-6 sm:p-8 border border-zinc-200/90 shadow-2xl text-center overflow-hidden animate-in zoom-in-95 duration-200"
             role="dialog"
             aria-modal="true"
+            aria-labelledby="success-title"
           >
             {/* Ambient emerald glow */}
             <div className="absolute -top-16 left-1/2 -translate-x-1/2 w-48 h-48 bg-emerald-500/20 rounded-full blur-2xl pointer-events-none" />
@@ -533,8 +575,8 @@ export const LogActionPage: React.FC<LogActionPageProps> = ({ setActiveTab }) =>
             {/* Dismiss button */}
             <button
               onClick={() => setSuccessModal(null)}
-              className="absolute top-4 right-4 p-1.5 rounded-lg text-zinc-400 hover:text-zinc-600 hover:bg-zinc-100 transition-colors"
-              aria-label="Close"
+              className="absolute top-4 right-4 p-1.5 rounded-lg text-zinc-400 hover:text-zinc-600 hover:bg-zinc-100 transition-colors focus-visible:outline-2 focus-visible:outline-emerald-600 cursor-pointer"
+              aria-label="Close modal"
             >
               <X className="w-5 h-5" />
             </button>
@@ -545,14 +587,14 @@ export const LogActionPage: React.FC<LogActionPageProps> = ({ setActiveTab }) =>
             </div>
 
             {/* Exact Required Title */}
-            <h2 className="text-2xl font-extrabold text-zinc-900 tracking-tight">
+            <h2 id="success-title" className="text-2xl font-extrabold text-zinc-900 tracking-tight">
               Great choice! 🌱
             </h2>
 
             {/* Exact Required Points Badge */}
             <div className="my-3 inline-flex items-center justify-center gap-1.5 px-4 py-1.5 rounded-full bg-emerald-50 border border-emerald-200">
               <Sparkles className="w-4 h-4 text-emerald-600" />
-              <span className="text-base font-extrabold font-mono text-emerald-800">
+              <span className="text-base font-extrabold font-mono tabular-nums text-emerald-800">
                 +{successModal.pointsEarned} EcoPoints
               </span>
             </div>
@@ -561,8 +603,8 @@ export const LogActionPage: React.FC<LogActionPageProps> = ({ setActiveTab }) =>
             <div className="p-4 my-4 rounded-2xl bg-zinc-50 border border-zinc-200/80 space-y-2">
               <p className="text-sm font-semibold text-zinc-800">
                 Your EcoScore increased from{' '}
-                <span className="font-mono font-bold text-zinc-900">{successModal.prevScore}</span> to{' '}
-                <span className="font-mono font-bold text-emerald-700">{successModal.newScore}</span>
+                <span className="font-mono font-bold tabular-nums text-zinc-900">{successModal.prevScore}</span> to{' '}
+                <span className="font-mono font-bold tabular-nums text-emerald-700">{successModal.newScore}</span>
               </p>
 
               {/* Visual Score Progress Bar */}
@@ -582,7 +624,7 @@ export const LogActionPage: React.FC<LogActionPageProps> = ({ setActiveTab }) =>
             <div className="flex flex-col sm:flex-row items-center gap-2.5 pt-2">
               <button
                 onClick={() => setSuccessModal(null)}
-                className="w-full sm:flex-1 py-2.5 px-4 bg-zinc-100 hover:bg-zinc-200 text-zinc-800 text-xs font-semibold rounded-xl transition-colors cursor-pointer"
+                className="w-full sm:flex-1 py-2.5 px-4 bg-zinc-100 hover:bg-zinc-200 text-zinc-800 text-xs font-semibold rounded-xl transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-emerald-600"
               >
                 Log Another Action
               </button>
@@ -593,7 +635,7 @@ export const LogActionPage: React.FC<LogActionPageProps> = ({ setActiveTab }) =>
                     setSuccessModal(null);
                     setActiveTab('dashboard');
                   }}
-                  className="w-full sm:flex-1 py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-xl shadow-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+                  className="w-full sm:flex-1 py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-xl shadow-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer focus-visible:outline-2 focus-visible:outline-emerald-600"
                 >
                   <span>View in Dashboard</span>
                   <ArrowRight className="w-3.5 h-3.5" />

@@ -97,6 +97,14 @@ export interface UserProfile {
   joinedDate: string;
 }
 
+export interface ToastMessage {
+  id: string;
+  type: 'success' | 'info' | 'award';
+  title: string;
+  message: string;
+  points?: number;
+}
+
 export type NavigationTab = 
   | 'landing' 
   | 'dashboard' 

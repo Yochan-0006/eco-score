@@ -17,7 +17,7 @@ import { ChallengesPage } from './components/challenges/ChallengesPage';
 import { LeaderboardPage } from './components/leaderboard/LeaderboardPage';
 import { AchievementsPage } from './components/achievements/AchievementsPage';
 import { AnalyticsPage } from './components/analytics/AnalyticsPage';
-import { Sprout, Heart, ShieldCheck, Github } from 'lucide-react';
+import { Sprout, ShieldCheck } from 'lucide-react';
 
 function AppContent() {
   const [activeTab, setActiveTab] = useState<NavigationTab>('dashboard');

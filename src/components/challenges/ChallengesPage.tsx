@@ -177,7 +177,7 @@ export const ChallengesPage: React.FC<ChallengesPageProps> = ({ setActiveTab }) 
                       </div>
                     </div>
 
-                    <span className="text-xs font-mono font-extrabold text-emerald-800 bg-emerald-50 border border-emerald-200/80 px-2.5 py-1 rounded-lg shrink-0">
+                    <span className="text-xs font-mono font-extrabold tabular-nums text-emerald-800 bg-emerald-50 border border-emerald-200/80 px-2.5 py-1 rounded-lg shrink-0">
                       +{challenge.rewardPoints} pts
                     </span>
                   </div>
@@ -229,7 +229,7 @@ export const ChallengesPage: React.FC<ChallengesPageProps> = ({ setActiveTab }) 
                     <button
                       type="button"
                       onClick={() => completeDailyChallenge(challenge.id)}
-                      className="w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] text-white text-xs font-bold rounded-xl shadow-xs transition-all flex items-center justify-center gap-2 cursor-pointer"
+                      className="w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] text-white text-xs font-bold rounded-xl shadow-xs transition-all flex items-center justify-center gap-2 cursor-pointer focus-visible:outline-2 focus-visible:outline-emerald-600"
                     >
                       <Check className="w-4 h-4" />
                       <span>Complete Challenge (+{challenge.rewardPoints} EcoPoints)</span>

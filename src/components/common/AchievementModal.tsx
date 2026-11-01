@@ -6,14 +6,32 @@ import { IconHelper } from './IconHelper';
 export const AchievementModal: React.FC = () => {
   const { unlockedAchievementModal, dismissAchievementModal } = useEco();
 
+  // Close on Escape key
+  React.useEffect(() => {
+    if (!unlockedAchievementModal) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        dismissAchievementModal();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [unlockedAchievementModal, dismissAchievementModal]);
+
   if (!unlockedAchievementModal) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-900/60 backdrop-blur-xs animate-in fade-in duration-200">
+    <div 
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-900/60 backdrop-blur-xs animate-in fade-in duration-200"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) dismissAchievementModal();
+      }}
+    >
       <div 
         className="relative w-full max-w-md bg-white rounded-3xl p-6 sm:p-8 border border-zinc-200/90 shadow-2xl text-center overflow-hidden animate-in zoom-in-95 duration-200"
         role="dialog"
         aria-modal="true"
+        aria-labelledby="achievement-modal-title"
       >
         {/* Glow ambient background */}
         <div className="absolute -top-16 left-1/2 -translate-x-1/2 w-52 h-52 bg-emerald-500/20 rounded-full blur-2xl pointer-events-none" />
@@ -21,8 +39,8 @@ export const AchievementModal: React.FC = () => {
         {/* Close button */}
         <button
           onClick={dismissAchievementModal}
-          className="absolute top-4 right-4 p-1.5 rounded-lg text-zinc-400 hover:text-zinc-600 hover:bg-zinc-100 transition-colors"
-          aria-label="Close"
+          className="absolute top-4 right-4 p-1.5 rounded-lg text-zinc-400 hover:text-zinc-600 hover:bg-zinc-100 transition-colors focus-visible:outline-2 focus-visible:outline-emerald-600 cursor-pointer"
+          aria-label="Close achievement modal"
         >
           <X className="w-5 h-5" />
         </button>
