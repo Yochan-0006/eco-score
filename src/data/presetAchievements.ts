@@ -8,10 +8,10 @@ export const INITIAL_ACHIEVEMENTS: Achievement[] = [
     icon: 'Sprout',
     tier: 'bronze',
     category: 'special',
-    unlockedAt: '2026-10-25T09:15:00Z',
-    progress: 100,
+    unlockedAt: null,
+    progress: 0,
     conditionText: 'Log 1 action',
-    isUnlocked: true
+    isUnlocked: false
   },
   {
     id: 'ach-green-traveler',
@@ -20,10 +20,10 @@ export const INITIAL_ACHIEVEMENTS: Achievement[] = [
     icon: 'Bike',
     tier: 'silver',
     category: 'commute',
-    unlockedAt: '2026-10-26T14:30:00Z',
-    progress: 100,
+    unlockedAt: null,
+    progress: 0,
     conditionText: 'Log 1 transport action',
-    isUnlocked: true
+    isUnlocked: false
   },
   {
     id: 'ach-recycle-master',
@@ -32,10 +32,10 @@ export const INITIAL_ACHIEVEMENTS: Achievement[] = [
     icon: 'Repeat',
     tier: 'silver',
     category: 'waste',
-    unlockedAt: '2026-10-27T11:20:00Z',
-    progress: 100,
+    unlockedAt: null,
+    progress: 0,
     conditionText: 'Log 1 waste action',
-    isUnlocked: true
+    isUnlocked: false
   },
   {
     id: 'ach-energy-saver',
@@ -44,10 +44,10 @@ export const INITIAL_ACHIEVEMENTS: Achievement[] = [
     icon: 'Lightbulb',
     tier: 'silver',
     category: 'energy',
-    unlockedAt: '2026-10-28T18:10:00Z',
-    progress: 100,
+    unlockedAt: null,
+    progress: 0,
     conditionText: 'Log 1 energy action',
-    isUnlocked: true
+    isUnlocked: false
   },
   {
     id: 'ach-conscious-eater',
@@ -56,10 +56,10 @@ export const INITIAL_ACHIEVEMENTS: Achievement[] = [
     icon: 'Salad',
     tier: 'silver',
     category: 'food',
-    unlockedAt: '2026-10-29T13:45:00Z',
-    progress: 100,
+    unlockedAt: null,
+    progress: 0,
     conditionText: 'Log 1 food action',
-    isUnlocked: true
+    isUnlocked: false
   },
   {
     id: 'ach-week-warrior',
@@ -69,7 +69,7 @@ export const INITIAL_ACHIEVEMENTS: Achievement[] = [
     tier: 'gold',
     category: 'streak',
     unlockedAt: null,
-    progress: 71, // e.g. 5 / 7 days
+    progress: 0,
     conditionText: 'Maintain 7-day streak',
     isUnlocked: false
   },
@@ -80,10 +80,10 @@ export const INITIAL_ACHIEVEMENTS: Achievement[] = [
     icon: 'ShieldCheck',
     tier: 'gold',
     category: 'points',
-    unlockedAt: '2026-10-30T10:00:00Z',
-    progress: 100,
+    unlockedAt: null,
+    progress: 0,
     conditionText: 'Earn 50 EcoPoints',
-    isUnlocked: true
+    isUnlocked: false
   },
   {
     id: 'ach-planet-hero',
@@ -93,7 +93,7 @@ export const INITIAL_ACHIEVEMENTS: Achievement[] = [
     tier: 'emerald',
     category: 'special',
     unlockedAt: null,
-    progress: 85, // based on points to 80
+    progress: 0,
     conditionText: 'Reach 80+ EcoPoints',
     isUnlocked: false
   }

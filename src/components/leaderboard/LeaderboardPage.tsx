@@ -167,25 +167,31 @@ export const LeaderboardPage: React.FC = () => {
         <h2 className="text-sm font-bold text-zinc-900 uppercase tracking-wider border-b border-zinc-200 pb-2">
           All Eco Champions ({filteredUsers.length})
         </h2>
-        <div className="space-y-2.5">
-          {filteredUsers.map(champion => {
-            const isYou = champion.isCurrentUser;
-            const initials = champion.initials || champion.name.slice(0, 2).toUpperCase();
-            return (
-              <div key={champion.id} className={`p-4 rounded-2xl border flex items-center justify-between ${isYou ? 'bg-emerald-50 border-emerald-400' : 'bg-white border-zinc-200'}`}>
-                <div className="flex items-center gap-3">
-                  <div className="w-8 font-mono font-bold text-zinc-500">#{champion.rank}</div>
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm ${getInitialsBadgeStyle(champion.name, isYou)}`}>{initials}</div>
-                  <div>
-                    <div className="font-bold text-sm">{champion.name}</div>
-                    <div className="text-[10px] uppercase font-bold text-zinc-500">{champion.level}</div>
+        {filteredUsers.length === 0 ? (
+          <div className="p-8 text-center rounded-2xl bg-zinc-50 border border-zinc-200/80 text-sm text-zinc-500">
+            No leaderboard data yet.
+          </div>
+        ) : (
+          <div className="space-y-2.5">
+            {filteredUsers.map(champion => {
+              const isYou = champion.isCurrentUser;
+              const initials = champion.initials || champion.name.slice(0, 2).toUpperCase();
+              return (
+                <div key={champion.id} className={`p-4 rounded-2xl border flex items-center justify-between ${isYou ? 'bg-emerald-50 border-emerald-400' : 'bg-white border-zinc-200'}`}>
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 font-mono font-bold text-zinc-500">#{champion.rank}</div>
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm ${getInitialsBadgeStyle(champion.name, isYou)}`}>{initials}</div>
+                    <div>
+                      <div className="font-bold text-sm">{champion.name}</div>
+                      <div className="text-[10px] uppercase font-bold text-zinc-500">{champion.level}</div>
+                    </div>
                   </div>
+                  <div className="font-mono font-bold text-sm">{champion.points} pts</div>
                 </div>
-                <div className="font-mono font-bold text-sm">{champion.points} pts</div>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );

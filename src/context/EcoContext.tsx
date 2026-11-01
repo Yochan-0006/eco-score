@@ -84,13 +84,16 @@ interface EcoContextType {
 const EcoContext = createContext<EcoContextType | undefined>(undefined);
 
 const STORAGE_KEYS = {
-  USER: 'ecoscore_user_v1',
-  LOGS: 'ecoscore_logs_v1',
-  CHALLENGES: 'ecoscore_challenges_v1',
-  ACHIEVEMENTS: 'ecoscore_achievements_v1',
-  CUSTOM_ACTIONS: 'ecoscore_custom_actions_v1',
-  INITIALIZED: 'ecoscore_initialized_v1'
+  USER: 'ecoscore_user_v2',
+  LOGS: 'ecoscore_logs_v2',
+  CHALLENGES: 'ecoscore_challenges_v2',
+  ACHIEVEMENTS: 'ecoscore_achievements_v2',
+  CUSTOM_ACTIONS: 'ecoscore_custom_actions_v2'
 };
+
+// One-time cleanup of old v1 keys
+const OLD_KEYS = ['ecoscore_user_v1', 'ecoscore_logs_v1', 'ecoscore_challenges_v1', 'ecoscore_achievements_v1', 'ecoscore_custom_actions_v1', 'ecoscore_initialized_v1'];
+OLD_KEYS.forEach(key => localStorage.removeItem(key));
 
 export const EcoProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   // State Initialization from localStorage or fallbacks
@@ -313,6 +316,9 @@ export const EcoProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // Dynamic Leaderboard: Place current user in the leaderboard and re-sort dynamically
   const { leaderboard, userRank } = useMemo(() => {
+    if (totalPoints === 0 && loggedActions.length === 0) {
+      return { leaderboard: [], userRank: 0 };
+    }
     const others = INITIAL_LEADERBOARD.filter(u => !u.isCurrentUser);
     const getInitials = (n: string) => {
       const parts = n.trim().split(/\s+/);
@@ -322,8 +328,8 @@ export const EcoProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     const currentUserItem: LeaderboardUser = {
       id: 'current-user',
-      name: user.name || 'Alex Rivers',
-      initials: getInitials(user.name || 'Alex Rivers'),
+      name: user.name || 'New User',
+      initials: getInitials(user.name || 'New User'),
       avatar: user.avatar,
       points: totalPoints,
       co2SavedKg: totalCo2SavedKg,
@@ -345,7 +351,7 @@ export const EcoProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     const myRank = ranked.findIndex(u => u.isCurrentUser) + 1;
     return { leaderboard: ranked, userRank: myRank || 1 };
-  }, [user, totalPoints, totalCo2SavedKg, loggedActions]);
+  }, [user, totalPoints, totalCo2SavedKg, loggedActions, levelInfo]);
 
   // Check achievements against current stats
   const evaluateAchievements = useCallback((currentActions: LoggedAction[], points: number, co2: number, water: number) => {
